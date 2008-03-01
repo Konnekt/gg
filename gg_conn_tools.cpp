@@ -209,40 +209,16 @@ bool __stdcall GG::timeoutDialogCB(int type , sDIALOG_long*sd) {
 		ICMessage((sd->flag & DLONG_NODLG)?IMC_LOG:IMI_ERROR , (int)"Up³yn¹³ limit czasu po³¹czenia.",0);
 		return true;
 	case TIMEOUTT_CHECK: {
-		gg_thread_socket_lock();
+		/*gg_thread_socket_lock();
 		gg_thread* info = gg_thread_find(sd->threadId, 0, 0);
 		if (!info) {
 			gg_thread_socket_unlock();
 			return 0;
 		}
-/*
-	    SOCKET s = gg_thread_socket();
-		gg_thread* param = (timeoutDialogParam*) sd->timeoutParam;
-		if (param && param->socket != s) {
-			delete param;
-			param = 0;
-			sd->timeoutParam = 0;
-		}
-		if (!s) {
-			gg_thread_socket_unlock();
-			return 0;
-		}
-		if (!param) {
-			param = new timeoutDialogParam(s);
-			sd->timeoutParam = param;
-		}
-	*/
         int r=WSAWaitForMultipleEvents(1,&info->event , 0 , 0 , 0);
-/*
-		timeval tv;
-		tv.tv_sec = tv.tv_usec = 0;
-		fd_set fds;
-		FD_ZERO(&fds);
-		FD_SET(info->socket, &fds);
-		select(0, , ,, &tv);
-*/
+
 		gg_thread_socket_unlock();
-		return r==WSA_WAIT_TIMEOUT;
+		return r==WSA_WAIT_TIMEOUT;*/
 		}
 
 	return 0; /*TODO: Wymyœleæ coœ na timeout!*/

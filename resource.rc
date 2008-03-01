@@ -64,7 +64,7 @@ BEGIN
             VALUE "Comments", "wiêcej informacji o Gadu-Gadu™ - http://www.gadu-gadu.pl/"
             VALUE "CompanyName", "stamina"
             VALUE "FileDescription", "protokó³ Gadu-Gadu™"
-            VALUE "FileVersion", "1.7.2"
+            VALUE "FileVersion", "1.8.0"
             VALUE "InternalName", "GG"
             VALUE "LegalCopyright", "©2003,2004,2005 Stamina"
             VALUE "LegalTrademarks", """Gadu-gadu"" jest zastrze¿onym znakiem towarowym sms-express sp. z o.o. "
@@ -111,11 +111,6 @@ END
 //
 // String Table
 //
-
-STRINGTABLE 
-BEGIN
-    IDS_ERR_LOGIN           "Nie mogê zalogowaæ siê na serwer.\nSprawdŸ swoje po³¹czenie, lub login/has³o w Opcjach"
-END
 
 #endif    // Polish resources
 /////////////////////////////////////////////////////////////////////////////

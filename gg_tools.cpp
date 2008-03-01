@@ -7,21 +7,7 @@ using Stamina::RegEx;
 using Stamina::SXML;
 using Stamina::chtoint;
 
-void GG::gg_debug_lfunc(int level, const char *format, ...)
-{
-	va_list ap;
-        char buff[502];
-	if ((gg_debug_level & level)) {
-		va_start(ap, format);
-                _vsnprintf(buff , 500 , (string("   _GG| ") + format).c_str() , ap);
-                buff[500]=0;
-                IMessage(IMC_LOG , 0,0,(int)buff,0);
-                //		vprintf(format, ap);
-		va_end(ap);
-	}
-}
-
-int GG::check(bool conn , bool session , bool login ,  bool warn) {
+int GG::check(bool conn, bool session, bool login,  bool warn) {
     bool err = 0;
   /* TODO : Rozsadne anulowanie polaczen... */
 /*    if (conn && !session && gg_connect(0,0,0) && !sess) {
@@ -34,7 +20,8 @@ int GG::check(bool conn , bool session , bool login ,  bool warn) {
     if (warn) ICMessage(IMI_ERROR , (int)"Aby dzia³aæ na serwerze GG musisz byæ po³¹czony z internetem!\nJe¿eli jesteœ po³¹czony sprawdŸ czy prawid³owo skonfigurowa³eœ po³¹czenie w konfiguracji!" , MB_TASKMODAL|MB_OK);
       }
     else if (session && !sess)
-      {err = 1;
+      {
+				err = 1;
        if (warn) ICMessage(IMI_ERROR , (int)"Musisz byæ po³¹czony z serwerem GG!" , MB_TASKMODAL);
       }
     else if (login && !GETINT(CFG_GG_LOGIN))
@@ -48,64 +35,62 @@ int GG::check(bool conn , bool session , bool login ,  bool warn) {
       return 1;
 }
 
-void GG::getAccount(int & login , CStdString & pass) {
-    login = GETINT(CFG_GG_LOGIN);
-    pass = GETSTR(CFG_GG_PASS);
-    if (!login || pass.empty()) {
-        sDIALOG_access sda;
-        sda.flag = DFLAG_SAVE;
-        sda.title = "Has³o do konta GG";
-        sda.info = "Aby wykonaæ wybran¹ operacjê, musisz podaæ has³o do swojego konta GG";
-        sda.save = false;
-        sda.login = (char*) GETSTR(CFG_GG_LOGIN);
-        sda.pass = "";
-        if (!ICMessage(IMI_DLGLOGIN , (int)&sda)) return;
-        pass = sda.pass;
-        login = atoi(sda.login);
-        if (sda.save) {
-            SETINT(CFG_GG_LOGIN , login);
-            SETSTR(CFG_GG_PASS , pass);
-        }
-    }
+void GG::getAccount(int& login , CStdString& pass) {
+	login = GETINT(CFG_GG_LOGIN);
+	pass = GETSTR(CFG_GG_PASS);
+	if (!login || pass.empty()) {
+		sDIALOG_access sda;
+		sda.flag = DFLAG_SAVE;
+		sda.title = "Has³o do konta GG";
+		sda.info = "Aby wykonaæ wybran¹ operacjê, musisz podaæ has³o do swojego konta GG.";
+		sda.save = false;
+		sda.login = (char*)GETSTR(CFG_GG_LOGIN);
+		sda.pass = "";
+
+		if (!ICMessage(IMI_DLGLOGIN, (int)&sda)) return;
+		pass = sda.pass;
+		login = atoi(sda.login);
+		if (sda.save) {
+			SETINT(CFG_GG_LOGIN, login);
+			SETSTR(CFG_GG_PASS, pass);
+		}
+	}
 }
 
-
-void GG::quickEvent(int Uid , const char * body , const char * ext , int flag) {
-    cMessage m;
-    m.net = NET_GG;
-    m.type = MT_QUICKEVENT;
+void GG::quickEvent(int Uid, const char* body, const char* ext, int flag) {
+	cMessage m;
+	m.net = NET_GG;
+	m.type = MT_QUICKEVENT;
 	std::string uid = inttostr(Uid);
-    m.fromUid = (char *)uid.c_str();
-    m.toUid = "";
-    m.body = (char *)body;
-    m.ext = (char *)ext;
-    m.flag = MF_HANDLEDBYUI;
-    m.action = NOACTION;
-    m.notify = 0;
-    ICMessage(IMC_NEWMESSAGE,(int)&m,0);
+	m.fromUid = (char*)uid.c_str();
+	m.toUid = "";
+	m.body = (char*)body;
+	m.ext = (char*)ext;
+	m.flag = MF_HANDLEDBYUI;
+	m.action = NOACTION;
+	m.notify = 0;
+	ICMessage(IMC_NEWMESSAGE, (int)&m, 0);
 }
-
 
 int GG::userType(int id) {
-    int cntStatus = GETCNTI(id , CNT_STATUS);
-    return (cntStatus & ST_IGNORED)?GG_USER_BLOCKED :(cntStatus & ST_HIDEMYSTATUS)? GG_USER_OFFLINE : GG_USER_NORMAL;
+	int cntStatus = GETCNTI(id, CNT_STATUS);
+	return (cntStatus & ST_IGNORED) ? GG_USER_BLOCKED : (cntStatus & ST_HIDEMYSTATUS) ? GG_USER_OFFLINE : GG_USER_NORMAL;
 }
-
 
 bool GG::getToken(const string & title , const string & info , string & tokenid , string & tokenval) {
 	gg_http * http = gg_token(0);
-	if (!http || http->state != GG_STATE_DONE) {
-		ICMessage(IMI_ERROR , (int)"Wyst¹pi³ b³¹d podczas pobierania tokenu. SprawdŸ po³¹czenie i spróbuj ponownie.");
+	if (!http) {
+		ICMessage(IMI_ERROR, (int)"Wyst¹pi³ b³¹d podczas pobierania tokenu. SprawdŸ po³¹czenie i spróbuj ponownie.");
 		return false;
 	}
-	struct gg_token * token = (struct gg_token*) http->data;
+	struct gg_token* token = (struct gg_token*)http->data;
 	tokenid = token->tokenid;
 	ICMessage(IMC_RESTORECURDIR);
-	char filename [MAX_PATH];
-	sprintf(filename , (string((char*)ICMessage(IMC_TEMPDIR)) + "gg_token%08x.jpg").c_str() , rand());
-	FILE * f = fopen(filename , "wb");
-	if (!f || !fwrite(http->body , http->body_size , 1 , f)) {
-		IMDEBUG(DBG_ERROR , "! Could not create/write temp file for token fn=%s size=%d" , filename , http->body_size);
+	char filename[MAX_PATH];
+	sprintf(filename, (string((char*)ICMessage(IMC_TEMPDIR)) + "gg_token%08x.gif").c_str(), rand());
+	FILE* f = fopen(filename, "wb");
+	if (!f || !fwrite(http->body, http->body_size, 1, f)) {
+		IMDEBUG(DBG_ERROR, "! Could not create/write temp file for token fn=%s size=%d", filename, http->body_size);
 		if (f)
 			fclose(f);
 		return false;
@@ -115,13 +100,14 @@ bool GG::getToken(const string & title , const string & info , string & tokenid 
 	dt.title = title.c_str();
 	dt.info = info.c_str();
 	string URL = "file://";
-	URL+= filename;
+	URL += filename;
 	dt.imageURL = URL.c_str();
-	ICMessage(IMI_DLGTOKEN , (int)&dt);
+	ICMessage(IMI_DLGTOKEN, (int)&dt);
 	tokenval = dt.token;
 	gg_token_free(http);
 	return !tokenval.empty();
 }
+
 CStdString GG::msgToHtml(CStdString msg , void * formats , int formats_length) {
 	/* Zamiast znaczników wstawia:
 	 < - 1
@@ -193,11 +179,12 @@ CStdString GG::msgToHtml(CStdString msg , void * formats , int formats_length) {
 };
 
 struct FormatState {
-	int bold , under, italic , color;
-	char rgb [3];
-	FormatState() {bold = under = italic = color = 0;}
+	int bold, under, italic, color;
+	char rgb[3];
+	FormatState() {
+		bold = under = italic = color = 0;
+	}
 };
-
 
 CStdString GG::htmlToMsg(CStdString msgIn , void * formats , int & length) {
 	int max_len = length;

@@ -10,6 +10,4 @@
 
 #define IDI_OVERLAY   105
 
-#define IDS_ERR_LOGIN 100
-
 #define IDI_LOGO 10000

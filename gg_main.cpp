@@ -55,7 +55,6 @@ int WINAPI DllEntryPoint(HINSTANCE hinst, unsigned long reason, void* lpReserved
 
 
 int Init() {
-  gg_debug = gg_debug_lfunc;
   InitializeCriticalSection(&msgSent_CS);
   InitializeCriticalSection(&searchMap_CS);
   gg_debug_level = 255 & ~(GG_DEBUG_DUMP | GG_DEBUG_FUNCTION);
@@ -269,7 +268,7 @@ int IEnd() {
   return 1;
 }
 
-ActionProc(sUIActionNotify_base * anBase) {
+int ActionProc(sUIActionNotify_base * anBase) {
   sUIActionNotify_2params * an = static_cast<sUIActionNotify_2params*>(anBase);
 //  int uiPos=Cnt.find(act->cnt);
   string str , str1 , str2;

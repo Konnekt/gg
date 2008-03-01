@@ -23,7 +23,7 @@ VOID CALLBACK GG::timerProc(HWND hwnd,UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
     }
     LeaveCriticalSection(&msgSent_CS);
     // PING
-    static ping_time=-TIMER_INTERVAL;
+    static int ping_time=-TIMER_INTERVAL;
     ping_time += TIMER_INTERVAL;
     if (ping_time>=PING_INTERVAL && sess) {
         ping_time = 0;
@@ -438,7 +438,3 @@ int GG::disconnect() {
 // ICMessage(IMC_SETCONNECT , !onRequest);
  return 1;
 }
-
-
-
-

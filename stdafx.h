@@ -13,7 +13,7 @@
 #include <process.h>
 #include <fcntl.h>
 #include <io.h>
-#include "include\msc_compat.h"
+#include "libgadu\compat_w32.h"
 #include "libgadu\libgadu.h"
 
 #include "konnekt/plug.h"

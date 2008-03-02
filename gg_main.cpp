@@ -89,7 +89,7 @@ int IPrepare() {
 		UIActionInsert(IMIG_TRAY, IMIA_GGSTATUS_ONLINE, 1, 0, "dostêpny", UIIcon(4, NET_GG, ST_ONLINE, 0));
 		UIActionInsert(IMIG_TRAY, IMIA_GGSTATUS_AWAY, 2, 0, "zaraz wracam", UIIcon(4, NET_GG, ST_AWAY, 0));
 		UIActionInsert(IMIG_TRAY, IMIA_GGSTATUS_HIDDEN, 3, 0, "ukryty", UIIcon(4, NET_GG, ST_HIDDEN, 0));
-		UIActionInsert(IMIG_TRAY, IMIA_GGSTATUS_OFFLINE, 4 , ACTT_BARBREAK, "niedostêpny", UIIcon(4, NET_GG, ST_OFFLINE, 0));
+		UIActionInsert(IMIG_TRAY, IMIA_GGSTATUS_OFFLINE, 4, ACTT_BARBREAK, "niedostêpny", UIIcon(4, NET_GG, ST_OFFLINE, 0));
 	}
 
 	UIActionAdd(IMIG_NFO_SAVE, IMIA_NFO_GGSAVE, ACTR_INIT, "W katalogu publicznym", UIIcon(IT_LOGO, NET_GG, 0, 0));
@@ -99,7 +99,7 @@ int IPrepare() {
 	UIGroupAdd(IMIG_MAIN_CNT, IMIG_MAIN_OPTIONS_LIST_GG,0, "GG", UIIcon(2,NET_GG,0,0));
 	UIActionAdd(IMIG_MAIN_OPTIONS_LIST_GG, IMIA_LIST_GG_IMPORT, 0, "Importuj listê");
 	UIActionAdd(IMIG_MAIN_OPTIONS_LIST_GG, IMIA_LIST_GG_EXPORT, 0, "Exportuj listê");
-	UIActionAdd(IMIG_MAIN_OPTIONS_LIST_GG, IMIA_LIST_GG_CLEAR , 0, "Usuñ kontakty");
+	UIActionAdd(IMIG_MAIN_OPTIONS_LIST_GG, IMIA_LIST_GG_CLEAR, 0, "Usuñ kontakty");
 	UIActionAdd(IMIG_MAIN_OPTIONS_LIST_GG, IMIA_LIST_GG_REFRESH, 0, "Odœwie¿ (kp)");
 
 	// Lista kontaktow
@@ -108,46 +108,48 @@ int IPrepare() {
 	// Config
 	UIGroupAdd(IMIG_CFG_USER, IMIG_GGCFG_USER,0,"GG",UIIcon(2,NET_GG,0,0)); {
 		UIActionCfgAddPluginInfoBox2(IMIG_GGCFG_USER, 
-				"<div>Wtyczka umo¿liwia komunikacjê przy pomocy najpopularniejszego protoko³u w Polsce."
-				, "Wykorzystano bibliotekê <b>LibGadu</b> (http://toxygen.net/libgadu/)"
-				"<br/>Strona domowa protoko³u GG - http://www.gadu-gadu.pl/"
-				"<br/><br/>Copyright ©2003,2004 <b>Stamina</b>"
-				, "res://dll/gglogo.ico", -3);
+			"<div>Wtyczka umo¿liwia komunikacjê przy pomocy najpopularniejszego protoko³u w Polsce."
+			, "Wykorzystano bibliotekê <b>LibGadu</b> (http://toxygen.net/libgadu/)"
+			"<br/>Strona domowa protoko³u GG - http://www.gadu-gadu.pl/"
+			"<br/><br/>Copyright ©2003,2004 <b>Stamina</b>"
+			, "res://dll/gglogo.ico", -3
+		);
 
 		CStdString txt;
 
 		UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_GROUP,"Konto na serwerze GG"); {
 			UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_COMMENT | ACTSC_INLINE,"Numerek GG",0,70);
 			txt = ShowBits::checkBits(ShowBits::showTooltipsBeginner) ? "Tu wpisz swój numer konta GG, lub za³ó¿ nowe konto przyciskiem poni¿ej." : "";
-			UIActionAdd(IMIG_GGCFG_USER, IMIB_CFG ,ACTT_EDIT | ACTSC_INLINE | ACTSC_INT,txt,CFG_GG_LOGIN,65);
-			UIActionAdd(IMIG_GGCFG_USER, IMIB_CFG ,ACTT_PASSWORD | ACTSC_INLINE,"",CFG_GG_PASS,65);
-			UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_COMMENT ,"Has³o",0,30);
+			UIActionAdd(IMIG_GGCFG_USER, IMIB_CFG ,ACTT_EDIT|ACTSC_INLINE|ACTSC_INT, txt, CFG_GG_LOGIN, 65);
+			UIActionAdd(IMIG_GGCFG_USER, IMIB_CFG ,ACTT_PASSWORD|ACTSC_INLINE,"",CFG_GG_PASS,65);
+			UIActionAdd(IMIG_GGCFG_USER, 0, ACTT_COMMENT, "Has³o", 0, 30);
 
-			UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_SEPARATOR);
+			UIActionAdd(IMIG_GGCFG_USER, 0, ACTT_SEPARATOR);
 
 			txt = SetActParam("Za³ó¿ konto", AP_ICO, inttostr(ICON_ACCOUNTCREATE));
-			UIActionAdd(IMIG_GGCFG_USER, IMIC_GG_ACCOUNT ,ACTT_BUTTON|ACTSC_INLINE|ACTSC_BOLD,txt,0,155, 30);
+			UIActionAdd(IMIG_GGCFG_USER, IMIC_GG_ACCOUNT, ACTT_BUTTON|ACTSC_INLINE|ACTSC_BOLD, txt, 0, 155, 30);
 			txt = SetActParam("Importuj listê kontaktów", AP_ICO, inttostr(ICON_IMPORT));
-			UIActionAdd(IMIG_GGCFG_USER, IMIA_LIST_GG_IMPORT ,ACTT_BUTTON|ACTSC_BOLD | ACTSC_FULLWIDTH,txt, 0, 180, 30);
+			UIActionAdd(IMIG_GGCFG_USER, IMIA_LIST_GG_IMPORT, ACTT_BUTTON|ACTSC_BOLD|ACTSC_FULLWIDTH, txt, 0, 180, 30);
 
 			txt = SetActParam("Zmieñ has³o", AP_ICO, inttostr(ICON_CHANGEPASSWORD));
 			UIActionAdd(IMIG_GGCFG_USER, IMIC_GG_NEWPASS ,ACTT_BUTTON|ACTSC_INLINE,txt,0,155, 30);
 			txt = SetActParam("Przypomnij has³o", AP_ICO, inttostr(ICON_REMINDPASSWORD));
 			UIActionAdd(IMIG_GGCFG_USER, IMIC_GG_REMINDPASS ,ACTT_BUTTON | ACTSC_FULLWIDTH,txt,0,180, 30);
+		}
 
-
-
-		}UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_GROUPEND,"");
-		UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_GROUP,"Ustawienia");{
+		UIActionAdd(IMIG_GGCFG_USER, 0, ACTT_GROUPEND, "");
+		UIActionAdd(IMIG_GGCFG_USER, 0, ACTT_GROUP, "Ustawienia");
+		{
 			if (ShowBits::checkLevel(ShowBits::levelNormal)) {
-				UIActionAdd(IMIG_GGCFG_USER, IMIB_CFG, ACTT_COMBO | ACTSCOMBO_LIST | ACTSC_INLINE
-					, "Ostatni" CFGICO "#74" CFGVALUE "0\n"
-						"Niedostêpny" CFGICO "0x40A00000" CFGVALUE "1\n"
-						"Dostêpny" CFGICO "0x40A00400" CFGVALUE "2\n"
-						"Zajêty" CFGICO "0x40A00410" CFGVALUE "3\n"
-						"Ukryty" CFGICO "0x40A00420" CFGVALUE "20"
-						AP_PARAMS AP_TIP "Status, który zostanie ustawiony po uruchomieniu programu"
-					, CFG_GG_STARTSTATUS);
+				UIActionAdd(IMIG_GGCFG_USER, IMIB_CFG, ACTT_COMBO|ACTSCOMBO_LIST|ACTSC_INLINE,
+					"Ostatni" CFGICO "#74" CFGVALUE "0\n"
+					"Niedostêpny" CFGICO "0x40A00000" CFGVALUE "1\n"
+					"Dostêpny" CFGICO "0x40A00400" CFGVALUE "2\n"
+					"Zajêty" CFGICO "0x40A00410" CFGVALUE "3\n"
+					"Ukryty" CFGICO "0x40A00420" CFGVALUE "20"
+					AP_PARAMS AP_TIP "Status, który zostanie ustawiony po uruchomieniu programu", 
+					CFG_GG_STARTSTATUS
+				);
 
 				UIActionAdd(IMIG_GGCFG_USER, 0, ACTT_COMMENT,"Status startowy");
 				UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_CHECK,"U¿ywaj bezpiecznego po³¹czenia, jeœli to mo¿liwe",CFG_GG_USESSL);
@@ -159,30 +161,34 @@ int IPrepare() {
 				UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_CHECK | ACTSC_NEEDRESTART,"Pe³ne menu w zasobniku systemowym" AP_TIP "Wszystkie statusy bêd¹ dostêpne bezpoœrednio w menu zasobnika (tray)",CFG_GG_TRAYMENU);
 				UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_CHECK,"Nie ³¹cz ponownie je¿eli serwer zakoñczy po³¹czenie." AP_TIP "W³¹cz t¹ opcjê, je¿eli czêsto korzystasz z konta w ró¿nych miejscach. Zapobiega cyklicznemu \"prze³¹czaniu\" pomiêdzy w³¹czonymi programami.",CFG_GG_DONTRESUMEDISCONNECTED);
 			}
-		}UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_GROUPEND,"");
+		}
+		UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_GROUPEND,"");
 		
 		if (ShowBits::checkLevel(ShowBits::levelAdvanced)) {
 			UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_GROUP,"Serwery");
-			UIActionAdd(IMIG_GGCFG_USER, IMIB_CFG ,ACTT_TEXT | ACTSC_INLINE,"" CFGTIP "Je¿eli zostawisz to pole puste - zostanie u¿yty serwer wskazany przez hub GG.",CFG_GG_SERVER, 150);
-			UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_TIPBUTTON | ACTSC_INLINE, AP_TIPRICH  "W ka¿dej linijce jeden serwer. Pusta linijka oznacza HUB (system zwracaj¹cy najmniej obci¹¿ony serwer)."
+			UIActionAdd(IMIG_GGCFG_USER, IMIB_CFG ,ACTT_TEXT|ACTSC_INLINE,"" CFGTIP "Je¿eli zostawisz to pole puste - zostanie u¿yty serwer wskazany przez hub GG.", CFG_GG_SERVER, 150);
+			UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_TIPBUTTON|ACTSC_INLINE, AP_TIPRICH  "W ka¿dej linijce jeden serwer. Pusta linijka oznacza HUB (system zwracaj¹cy najmniej obci¹¿ony serwer)."
 				"<br/><b>Format</b> (zawartoœæ [...] jest opcjonalna):"
 				"<br/><u>Adres</u>[:<u>port</u>]"
 				"<br/><b>SSL</b>[ <u>Adres</u>[:<u>port</u>]] <i>(po³¹czenie szyfrowane)</i>"
 				"<br/><br/>Aby wy³¹czyæ serwer dodaj <b>!</b> na pocz¹tku."
-				AP_TIPRICH_WIDTH "300");
+				AP_TIPRICH_WIDTH "300"
+			);
 			txt = SetActParam("Domyœlne", AP_ICO, inttostr(ICON_DEFAULT));
-			UIActionAdd(IMIG_GGCFG_USER, IMIC_GG_DEFSERVERS ,ACTT_BUTTON | ACTSC_INLINE,txt, 0, 0, 25);
+			UIActionAdd(IMIG_GGCFG_USER, IMIC_GG_DEFSERVERS, ACTT_BUTTON|ACTSC_INLINE, txt, 0, 0, 25);
 			txt = SetActParam("Tylko SSL", AP_ICO, inttostr(ICON_SECURE));
-			UIActionAdd(IMIG_GGCFG_USER, IMIC_GG_SERVERSSSLONLY ,ACTT_BUTTON,txt, 0, 0, 25);
-			UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_GROUPEND,"");
+			UIActionAdd(IMIG_GGCFG_USER, IMIC_GG_SERVERSSSLONLY, ACTT_BUTTON, txt, 0, 0, 25);
+			UIActionAdd(IMIG_GGCFG_USER, 0, ACTT_GROUPEND, "");
 		}
 		if (ShowBits::checkLevel(ShowBits::levelNormal)) {
-			UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_GROUP,"");{
+			UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_GROUP,"");
+			{
 				txt = SetActParam(AP_TIPRICH "<b>UWAGA!</b> Konto zostanie <u>bezpowrotnie</u> usuniête z serwera GG! Nie bêdziesz móg³ wiêcej korzystaæ z tego numeru!", AP_ICO, inttostr(ICON_WARNING));
 				UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_TIPBUTTON | ACTSC_INLINE,txt,0,30, 30);
 				txt = SetActParam("Usuñ konto z serwera", AP_ICO, inttostr(ICON_ACCOUNTREMOVE));
 				UIActionAdd(IMIG_GGCFG_USER, IMIC_GG_REMOVEACCOUNT ,ACTT_BUTTON,txt,0,170, 30);
-			}UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_GROUPEND,"");
+			}
+			UIActionAdd(IMIG_GGCFG_USER, 0 ,ACTT_GROUPEND,"");
 		}
 	}
 	return 1;
@@ -195,210 +201,203 @@ int IPrepare() {
 // setdesc == -1 -> pobiera ten, ktory jest teraz ustawiony...
 
 int IStart() {
-  IMLOG("- LibGaduw32 v: %s", gg_libgadu_version());
-  ggThread=0;
-  PlugStatusChange(ST_OFFLINE, "");
-  // Ustawiamy status startowy
-  if (GETINT(CFG_GG_STARTSTATUS))
-	  SETINT(CFG_GG_STATUS, GETINT(CFG_GG_STARTSTATUS));
-  return 1;
+	IMLOG("- LibGaduw32 v: %s", gg_libgadu_version());
+	ggThread=0;
+	PlugStatusChange(ST_OFFLINE, "");
+	// Ustawiamy status startowy
+	if (GETINT(CFG_GG_STARTSTATUS))
+		SETINT(CFG_GG_STATUS, GETINT(CFG_GG_STARTSTATUS));
+	return 1;
 }
 
 int IEnd() {
-  disconnect();
-//  if (sess) gg_free_session(sess);
-//  if (ggThread) TerminateThread(ggThread, 0);
-//  Sleep(1000);
+	disconnect();
+	//if (sess) gg_free_session(sess);
+	//if (ggThread) TerminateThread(ggThread, 0);
+	//Sleep(1000);
   int i = 0;
   IMLOG("# Czekam na koniec w¹tku GG");
   while (ggThread && i < 1000) {
-//    IMLOG("#Czekam na koniec w¹tku GG");
     Ctrl->Sleep(10);
     i++;
   }
   IMLOG("# Zakoñczony po %d", i);
-//  CloseHandle(timer);
+	//CloseHandle(timer);
   DeleteCriticalSection(&msgSent_CS);
   DeleteCriticalSection(&searchMap_CS);
   return 1;
 }
 
 int ActionProc(sUIActionNotify_base * anBase) {
-  sUIActionNotify_2params * an = static_cast<sUIActionNotify_2params*>(anBase);
-//  int uiPos=Cnt.find(act->cnt);
-  string str, str1, str2;
-  int i, a;
-  sUIAction act2;
-  sDIALOG_long sdl;
-  switch (an->act.id) {
-      case IMIG_GGSTATUS_SERVER:
-		  if (an->code == ACTN_ACTION) {
-			  GG::chooseServer();	
-		  } else
-          if (an->code == ACTN_CREATE) {
-              sUIActionInfo ai(an->act);
-              ai.mask = UIAIM_STATUS;
-              ai.status = 0;//ggThread?0:ACTS_HIDDEN;
-              ai.statusMask = ACTS_HIDDEN;
-              CStdString server;
-              ai.mask |= UIAIM_TXT;
-              if (ggThread) {
-                  if (currentServer=="" || currentServer=="SSL") {
-                      server = "H:";
-                      in_addr in;
-					  if (sess) {
-					      in.S_un.S_addr = sess->server_addr;
-						  server += inet_ntoa(in);
-					  }
-					  if (currentServer=="SSL") {server+=" SSL";}
-                  } else server = currentServer;
-//				  if (sess && sess->ssl) {server+=" SSL";}
-				  if (!sess) server = "³¹czê z " + server;
-				  ai.txt = (char*)server.c_str();
-			  } else {ai.txt = "wybierz serwer";}
-              UIActionSet(ai);
-          }
-          break;
-     case IMIA_GGSTATUS_ONLINE:
-        ACTIONONLY(an);
-        SETINT(CFG_GG_STATUS, GG_STATUS_AVAIL);
-        if (!ggThread) connect();
-          else setStatus(GG_STATUS_AVAIL,1);
-        break;
-     case IMIA_GGSTATUS_OFFLINE:
-        ACTIONONLY(an);
-        onRequest = true;
-        disconnect();
-        break;
-
-     case IMIA_GGSTATUS_AWAY:
-        ACTIONONLY(an);
-        SETINT(CFG_GG_STATUS, GG_STATUS_BUSY);
-        if (!ggThread) connect();
-          else setStatus(GG_STATUS_BUSY,1);
-        break;
-
-     case IMIA_GGSTATUS_HIDDEN:
-        ACTIONONLY(an);
-        SETINT(CFG_GG_STATUS, GG_STATUS_INVISIBLE);
-        if (!ggThread) connect();
-          else setStatus(GG_STATUS_INVISIBLE,1);
-        break;
-     case IMIA_GGSTATUS_DESC:
-        ACTIONONLY(an);
-        setStatusDesc();
-        break;
-     case IMIC_GG_ACCOUNT:
-        ACTIONONLY(an);
-		CloseHandle((HANDLE)Ctrl->BeginThread("NewAccount", 0, 0, dlgAccount, 0, 0, 0));
-        break;
-     case IMIC_GG_REMOVEACCOUNT:
-        ACTIONONLY(an);
-		CloseHandle((HANDLE)Ctrl->BeginThread("RemoveAccount", 0, 0, dlgRemoveAccount, 0, 0, 0));
-        break;
-     case IMIC_GG_NEWPASS:
-        ACTIONONLY(an);
-		CloseHandle((HANDLE)Ctrl->BeginThread("NewPass", 0, 0, dlgNewPass, 0, 0, 0));
-        break;
-     case IMIC_GG_REMINDPASS:
-        ACTIONONLY(an);
-        CloseHandle((HANDLE)Ctrl->BeginThread("RemindPass", 0, 0, dlgRemindPass, 0, 0, 0));
-        break;
-
-
-     case IMIC_GG_DEFSERVERS:
-         ACTIONONLY(an);
-         UIActionCfgSetValue(sUIAction(an->act.parent,CFG_GG_SERVER | IMIB_CFG), GG_DEF_SERVERS );
-         break;
-	 case IMIC_GG_SERVERSSSLONLY:
-         ACTIONONLY(an);
-         UIActionCfgSetValue(sUIAction(an->act.parent,CFG_GG_SERVER | IMIB_CFG), "SSL");
-		 UIActionCfgSetValue(sUIAction(an->act.parent,CFG_GG_USESSL | IMIB_CFG), "1");
-         break;
-
-     case IMIA_LIST_GG_CLEAR:
-        ACTIONONLY(an);
-        if (IMessage(IMI_CONFIRM, 0, 0, (int)"Wszystkie kontakty sieci G*duG*du zostan¹ usuniête!\nKontynuowaæ?",MB_TASKMODAL|MB_OKCANCEL)!=IDOK) return 0;
-        a = ICMessage(IMC_CNT_COUNT);
-        for (i = 1; i < a; i++) {
-          if (GETCNTI(i, CNT_NET) == NET_GG){
-            ICMessage(IMC_CNT_REMOVE, i);
-            a--;
-            i--;
-          }
-        }
-        ICMessage(IMI_REFRESH_LST);
-        break;
-
-     case IMIA_LIST_GG_EXPORT:
-        ACTIONONLY(an);
-		dlgListExport();
-        break;
-
-     case IMIA_LIST_GG_IMPORT:
-        ACTIONONLY(an);
-        dlgListImport();
-        break;
-     case IMIA_LIST_GG_REFRESH:
-        ACTIONONLY(an);
-        CloseHandle((HANDLE)Ctrl->BeginThread("RefreshList", 0, 0, dlgListRefresh));
-        break;
-
-// ----------------------- CNT
-     case IMIA_GGHIDESTATUS:
-        if (an->code == ACTN_ACTION) {
-          if ((signed int)an->act.cnt < 0) return 0;
-          if (!GETINT(CFG_GG_FRIENDSONLY)) {
-              int r = IMessage(&sIMessage_msgBox(IMI_CONFIRM 
-                 , "Aby ukryæ swój status musisz mieæ w³¹czone\r\n[Tylko dla znajomych]. W³¹czyæ je za Ciebie?", 0, MB_YESNOCANCEL));
-              if (r==IDYES) SETINT(CFG_GG_FRIENDSONLY, 1);
-              else if (r==IDCANCEL) return 0;
-          }
-          bool hide = !(GETCNTI(an->act.cnt, CNT_STATUS) & ST_HIDEMYSTATUS);
-		  
-          SETCNTI(an->act.cnt, CNT_STATUS, hide?ST_HIDEMYSTATUS : 0, ST_HIDEMYSTATUS);
-          ICMessage(IMI_REFRESH_CNT, an->act.cnt);
-          if (sess && !(GETCNTI(an->act.cnt, CNT_STATUS) & ST_IGNORED)) {
-              int Uid = atoi(GETCNTC(an->act.cnt, CNT_UID));
-              if (hide)
-                  gg_remove_notify_ex(sess, Uid, GG_USER_NORMAL);
-              gg_add_notify_ex(sess, Uid, userType(an->act.cnt));
-          }
-        }
-        else if (an->code == ACTN_CREATE) {
-            if ((signed int)an->act.cnt < 0 || GETCNTI(an->act.cnt,CNT_NET)!=NET_GG) {
-              UIActionSetStatus(an->act, ACTS_HIDDEN, ACTS_HIDDEN);
-              return 0;
-            }
-            if (GETCNTI(an->act.cnt, CNT_STATUS)& ST_HIDEMYSTATUS) {
-              UIActionSetStatus(an->act, ACTS_CHECKED, ACTS_CHECKED|ACTS_HIDDEN);
-              //SETINT(CFG_GG_FRIENDSONLY, 1);
-              return 0;
-            }
-            UIActionSetStatus(an->act, 0, ACTS_CHECKED|ACTS_HIDDEN);
-        }
-        break;
-	 case IMIA_NFO_GGREFRESH:
-		 if (anBase->code == ACTN_CREATE) {
-			 UIActionSetStatus(anBase->act, (ggThread && (Ctrl->DTgetPos(DTCNT, anBase->act.cnt)==0 || !strcmp(UIActionCfgGetValue(sUIAction(IMIG_NFO_DETAILS, IMIB_CNT | CNT_NET, anBase->act.cnt),0,0), "10"))) ? 0 : -1, ACTS_HIDDEN );
-		 } else if (anBase->code == ACTN_ACTION) {
-			 IMessageDirect(IM_CNT_DOWNLOAD, Ctrl->ID(), anBase->act.cnt, 1);
-			 ICMessage(IMI_CNT_DETAILS_SUMMARIZE, anBase->act.cnt);
-		 }
-		 break;
-	 case IMIA_NFO_GGSAVE:
-		 if (anBase->code == ACTN_CREATE) {
-			 UIActionSetStatus(anBase->act, ggThread && Ctrl->DTgetPos(DTCNT,anBase->act.cnt)==0 ? 0 : -1, ACTS_HIDDEN );
-		 } else if (anBase->code == ACTN_ACTION) {
-			 IMessageDirect(IM_CNT_UPLOAD, Ctrl->ID(), anBase->act.cnt, 1);
-		 }
-		 break;
-
-  }
-  return 0;
+	sUIActionNotify_2params * an = static_cast<sUIActionNotify_2params*>(anBase);
+	//int uiPos=Cnt.find(act->cnt);
+	string str, str1, str2;
+	int i, a;
+	sUIAction act2;
+	sDIALOG_long sdl;
+	switch (an->act.id) {
+		case IMIG_GGSTATUS_SERVER: {
+			if (an->code == ACTN_ACTION) {
+				GG::chooseServer();	
+			} else if (an->code == ACTN_CREATE) {
+				sUIActionInfo ai(an->act);
+				ai.mask = UIAIM_STATUS;
+				ai.status = 0;//ggThread?0:ACTS_HIDDEN;
+				ai.statusMask = ACTS_HIDDEN;
+				CStdString server;
+				ai.mask |= UIAIM_TXT;
+				if (ggThread) {
+					if (currentServer=="" || currentServer=="SSL") {
+						server = "H:";
+						in_addr in;
+						if (sess) {
+							in.S_un.S_addr = sess->server_addr;
+							server += inet_ntoa(in);
+						}
+						if (currentServer=="SSL") {
+							server+=" SSL";
+						}
+					} else server = currentServer;
+					// if (sess && sess->ssl) {server+=" SSL";}
+					if (!sess) server = "³¹czê z " + server;
+					ai.txt = (char*)server.c_str();
+				} else {
+					ai.txt = "wybierz serwer";
+				}
+				UIActionSet(ai);
+			}
+			break;
+		} case IMIA_GGSTATUS_ONLINE: {
+			ACTIONONLY(an);
+			SETINT(CFG_GG_STATUS, GG_STATUS_AVAIL);
+			if (!ggThread) connect();
+			else setStatus(GG_STATUS_AVAIL,1);
+			break;
+		} case IMIA_GGSTATUS_OFFLINE: {
+			ACTIONONLY(an);
+			onRequest = true;
+			disconnect();
+			break;
+		} case IMIA_GGSTATUS_AWAY: {
+			ACTIONONLY(an);
+			SETINT(CFG_GG_STATUS, GG_STATUS_BUSY);
+			if (!ggThread) connect();
+			else setStatus(GG_STATUS_BUSY,1);
+			break;
+		} case IMIA_GGSTATUS_HIDDEN: {
+			ACTIONONLY(an);
+			SETINT(CFG_GG_STATUS, GG_STATUS_INVISIBLE);
+			if (!ggThread) connect();
+			else setStatus(GG_STATUS_INVISIBLE,1);
+			break;
+		} case IMIA_GGSTATUS_DESC: {
+			ACTIONONLY(an);
+			setStatusDesc();
+			break;
+		} case IMIC_GG_ACCOUNT: {
+			ACTIONONLY(an);
+			CloseHandle((HANDLE)Ctrl->BeginThread("NewAccount", 0, 0, dlgAccount, 0, 0, 0));
+			break;
+		} case IMIC_GG_REMOVEACCOUNT: {
+			ACTIONONLY(an);
+			CloseHandle((HANDLE)Ctrl->BeginThread("RemoveAccount", 0, 0, dlgRemoveAccount, 0, 0, 0));
+			break;
+		} case IMIC_GG_NEWPASS: {
+			ACTIONONLY(an);
+			CloseHandle((HANDLE)Ctrl->BeginThread("NewPass", 0, 0, dlgNewPass, 0, 0, 0));
+			break;
+		} case IMIC_GG_REMINDPASS: {
+			ACTIONONLY(an);
+			CloseHandle((HANDLE)Ctrl->BeginThread("RemindPass", 0, 0, dlgRemindPass, 0, 0, 0));
+			break;
+		} case IMIC_GG_DEFSERVERS: {
+			ACTIONONLY(an);
+			UIActionCfgSetValue(sUIAction(an->act.parent,CFG_GG_SERVER | IMIB_CFG), GG_DEF_SERVERS );
+			break;
+		} case IMIC_GG_SERVERSSSLONLY: {
+			ACTIONONLY(an);
+			UIActionCfgSetValue(sUIAction(an->act.parent,CFG_GG_SERVER | IMIB_CFG), "SSL");
+			UIActionCfgSetValue(sUIAction(an->act.parent,CFG_GG_USESSL | IMIB_CFG), "1");
+			break;
+		} case IMIA_LIST_GG_CLEAR: {
+			ACTIONONLY(an);
+			if (IMessage(IMI_CONFIRM, 0, 0, (int)"Wszystkie kontakty sieci Gadu-Gadu™ zostan¹ usuniête!\nKontynuowaæ?", MB_TASKMODAL|MB_OKCANCEL) != IDOK) return 0;
+			a = ICMessage(IMC_CNT_COUNT);
+			for (i = 1; i < a; i++) {
+				if (GETCNTI(i, CNT_NET) == NET_GG) {
+					ICMessage(IMC_CNT_REMOVE, i);
+					a--;
+					i--;
+				}
+			}
+			ICMessage(IMI_REFRESH_LST);
+			break;
+		} case IMIA_LIST_GG_EXPORT: {
+			ACTIONONLY(an);
+			dlgListExport();
+			break;
+		} case IMIA_LIST_GG_IMPORT: {
+			ACTIONONLY(an);
+			dlgListImport();
+			break;
+		} case IMIA_LIST_GG_REFRESH: {
+			ACTIONONLY(an);
+			CloseHandle((HANDLE)Ctrl->BeginThread("RefreshList", 0, 0, dlgListRefresh));
+			break;
+		// ----------------------- CNT
+		} case IMIA_GGHIDESTATUS: {
+			if (an->code == ACTN_ACTION) {
+				if ((signed int)an->act.cnt < 0) return 0;
+				if (!GETINT(CFG_GG_FRIENDSONLY)) {
+					int r = IMessage(&sIMessage_msgBox(IMI_CONFIRM, 
+						"Aby ukryæ swój status musisz mieæ w³¹czone\r\n[Tylko dla znajomych]. W³¹czyæ je za Ciebie?", 0, MB_YESNOCANCEL)
+					);
+					if (r == IDYES)
+						SETINT(CFG_GG_FRIENDSONLY, 1);
+					else if (r==IDCANCEL)
+						return 0;
+				}
+				bool hide = !(GETCNTI(an->act.cnt, CNT_STATUS) & ST_HIDEMYSTATUS);
+				SETCNTI(an->act.cnt, CNT_STATUS, hide ? ST_HIDEMYSTATUS : 0, ST_HIDEMYSTATUS);
+				ICMessage(IMI_REFRESH_CNT, an->act.cnt);
+				if (sess && !(GETCNTI(an->act.cnt, CNT_STATUS) & ST_IGNORED)) {
+					int Uid = atoi(GETCNTC(an->act.cnt, CNT_UID));
+					if (hide)
+						gg_remove_notify_ex(sess, Uid, GG_USER_NORMAL);
+					gg_add_notify_ex(sess, Uid, userType(an->act.cnt));
+				}
+			} else if (an->code == ACTN_CREATE) {
+				if ((signed int)an->act.cnt < 0 || GETCNTI(an->act.cnt,CNT_NET)!=NET_GG) {
+					UIActionSetStatus(an->act, ACTS_HIDDEN, ACTS_HIDDEN);
+					return 0;
+				}
+				if (GETCNTI(an->act.cnt, CNT_STATUS)& ST_HIDEMYSTATUS) {
+					UIActionSetStatus(an->act, ACTS_CHECKED, ACTS_CHECKED|ACTS_HIDDEN);
+					//SETINT(CFG_GG_FRIENDSONLY, 1);
+					return 0;
+				}
+				UIActionSetStatus(an->act, 0, ACTS_CHECKED|ACTS_HIDDEN);
+			}
+			break;
+		} case IMIA_NFO_GGREFRESH: {
+			if (anBase->code == ACTN_CREATE) {
+				UIActionSetStatus(anBase->act, (ggThread && (Ctrl->DTgetPos(DTCNT, anBase->act.cnt) == 0 || !strcmp(UIActionCfgGetValue(sUIAction(IMIG_NFO_DETAILS, IMIB_CNT | CNT_NET, anBase->act.cnt),0,0), "10"))) ? 0 : -1, ACTS_HIDDEN);
+			} else if (anBase->code == ACTN_ACTION) {
+				IMessageDirect(IM_CNT_DOWNLOAD, Ctrl->ID(), anBase->act.cnt, 1);
+				ICMessage(IMI_CNT_DETAILS_SUMMARIZE, anBase->act.cnt);
+			}
+			break;
+		} case IMIA_NFO_GGSAVE: {
+			if (anBase->code == ACTN_CREATE) {
+				UIActionSetStatus(anBase->act, ggThread && Ctrl->DTgetPos(DTCNT,anBase->act.cnt) == 0 ? 0 : -1, ACTS_HIDDEN);
+			} else if (anBase->code == ACTN_ACTION) {
+				IMessageDirect(IM_CNT_UPLOAD, Ctrl->ID(), anBase->act.cnt, 1);
+			}
+			break;
+		}
+	}
+	return 0;
 }
-
-//---------------------------------------------------------------------------
 
 int __stdcall IMessageProc(sIMessage_base* msgBase) {
 	sIMessage_2params* msg = static_cast<sIMessage_2params*>(msgBase);

@@ -12,21 +12,21 @@ int GG::check(bool conn, bool session, bool login,  bool warn) {
   /* TODO : Rozsadne anulowanie polaczen... */
 /*    if (conn && !session && gg_connect(0,0,0) && !sess) {
        err = 1;
-       if (warn) ICMessage(IMI_ERROR , (int)"Poczekaj .. Po≥πczenie juø jest zajÍte!");
+       if (warn) ICMessage(IMI_ERROR, (int)"Poczekaj .. Po≥πczenie juø jest zajÍte!");
     } else
 */
     if (conn && !ICMessage(IMC_CONNECTED))
       {err = 1;
-    if (warn) ICMessage(IMI_ERROR , (int)"Aby dzia≥aÊ na serwerze GG musisz byÊ po≥πczony z internetem!\nJeøeli jesteú po≥πczony sprawdü czy prawid≥owo skonfigurowa≥eú po≥πczenie w konfiguracji!" , MB_TASKMODAL|MB_OK);
+    if (warn) ICMessage(IMI_ERROR, (int)"Aby dzia≥aÊ na serwerze GG musisz byÊ po≥πczony z internetem!\nJeøeli jesteú po≥πczony sprawdü czy prawid≥owo skonfigurowa≥eú po≥πczenie w konfiguracji!", MB_TASKMODAL|MB_OK);
       }
     else if (session && !sess)
       {
 				err = 1;
-       if (warn) ICMessage(IMI_ERROR , (int)"Musisz byÊ po≥πczony z serwerem GG!" , MB_TASKMODAL);
+       if (warn) ICMessage(IMI_ERROR, (int)"Musisz byÊ po≥πczony z serwerem GG!", MB_TASKMODAL);
       }
     else if (login && !GETINT(CFG_GG_LOGIN))
       {err=1;
-       if (warn) ICMessage(IMI_ERROR , (int)"Musisz ustawiÊ login i has≥o konta GG!\nJeøeli nie masz konta , za≥Ûø je przyciskiem w konfiguracji.",MB_TASKMODAL|MB_OK);
+       if (warn) ICMessage(IMI_ERROR, (int)"Musisz ustawiÊ login i has≥o konta GG!\nJeøeli nie masz konta, za≥Ûø je przyciskiem w konfiguracji.",MB_TASKMODAL|MB_OK);
       }
 
     if (err)
@@ -35,7 +35,7 @@ int GG::check(bool conn, bool session, bool login,  bool warn) {
       return 1;
 }
 
-void GG::getAccount(int& login , CStdString& pass) {
+void GG::getAccount(int& login, CStdString& pass) {
 	login = GETINT(CFG_GG_LOGIN);
 	pass = GETSTR(CFG_GG_PASS);
 	if (!login || pass.empty()) {
@@ -77,7 +77,7 @@ int GG::userType(int id) {
 	return (cntStatus & ST_IGNORED) ? GG_USER_BLOCKED : (cntStatus & ST_HIDEMYSTATUS) ? GG_USER_OFFLINE : GG_USER_NORMAL;
 }
 
-bool GG::getToken(const string & title , const string & info , string & tokenid , string & tokenval) {
+bool GG::getToken(const string & title, const string & info, string & tokenid, string & tokenval) {
 	gg_http * http = gg_token(0);
 	if (!http) {
 		ICMessage(IMI_ERROR, (int)"Wystπpi≥ b≥πd podczas pobierania tokenu. Sprawdü po≥πczenie i sprÛbuj ponownie.");
@@ -108,13 +108,13 @@ bool GG::getToken(const string & title , const string & info , string & tokenid 
 	return !tokenval.empty();
 }
 
-CStdString GG::msgToHtml(CStdString msg , void * formats , int formats_length) {
+CStdString GG::msgToHtml(CStdString msg, void * formats, int formats_length) {
 	/* Zamiast znacznikÛw wstawia:
 	 < - 1
 	 > - 2
 	 " - 3
 	*/
-	str_tr((char*)msg.c_str() , "\1\2\3" , "   ");
+	str_tr((char*)msg.c_str(), "\1\2\3", "   ");
 	// Przeglπdamy listÍ i modyfikujemy...
 	void * formats_end = (char*)formats + formats_length;
 	CStdString msg2 = "";
@@ -123,7 +123,7 @@ CStdString GG::msgToHtml(CStdString msg , void * formats , int formats_length) {
 		unsigned int italic : 1;
 		unsigned int under : 1;
 		unsigned int color: 1;
-		void finish(CStdString & txt , int type) {
+		void finish(CStdString & txt, int type) {
 			if (color) {txt+="\1/font\2"; color = 0;}
 			if (!(type & GG_FONT_UNDERLINE) && under) {txt+="\1/u\2"; under = 0;}
 			if (!(type & GG_FONT_ITALIC) && italic) {txt+="\1/i\2"; italic = 0;}
@@ -136,9 +136,9 @@ CStdString GG::msgToHtml(CStdString msg , void * formats , int formats_length) {
 		gg_msg_richtext_format * rf = (gg_msg_richtext_format*)formats;
 		if (rf->position >= msg.size())
 			break; // b≥πd
-		msg2+= msg.substr(pos , rf->position - pos);
+		msg2+= msg.substr(pos, rf->position - pos);
 		pos = rf->position;
-		opened.finish(msg2 , rf->font);
+		opened.finish(msg2, rf->font);
 		if ((rf->font & GG_FONT_BOLD) && !opened.bold) {
 			msg2+="\1b\2";
 			opened.bold=1;
@@ -157,24 +157,24 @@ CStdString GG::msgToHtml(CStdString msg , void * formats , int formats_length) {
 			if (rc->red || rc->green || rc->blue) {
 				opened.color=1;
 				msg2+="\1font color=\3#";
-				msg2+=inttostr(rc->red , 16 , 2 , true);
-				msg2+=inttostr(rc->green , 16 , 2 , true);
-				msg2+=inttostr(rc->blue , 16 , 2 , true);
+				msg2+=inttostr(rc->red, 16, 2, true);
+				msg2+=inttostr(rc->green, 16, 2, true);
+				msg2+=inttostr(rc->blue, 16, 2, true);
 				msg2+="\3\2";
 			} else opened.color = 0;
 			formats = rc+1;
 		}
 	}
 	msg2 += msg.substr(pos);
-	opened.finish(msg2 , 0);
+	opened.finish(msg2, 0);
 	msg = msg2;
 	msg2.clear();
 	// KoÒcowy efekt "enkodujemy"
 	RegEx pr;
-	msg = pr.replace("/[^ a-z0-9\1\2\3\\!\\@\\#\\$\\%\\*\\(\\)\\-_=+\\.\\,\\;':\\\\[\\]\\{\\}\\/\\?πÊÍ≥ÒÛúüø•∆ £—”åèØ]/i" , Stamina::encodeCallback , msg);
-	msg = pr.replace("/\\n/" , "<br/>" , msg);
+	msg = pr.replace("/[^ a-z0-9\1\2\3\\!\\@\\#\\$\\%\\*\\(\\)\\-_=+\\.\\,\\;':\\\\[\\]\\{\\}\\/\\?πÊÍ≥ÒÛúüø•∆ £—”åèØ]/i", Stamina::encodeCallback, msg);
+	msg = pr.replace("/\\n/", "<br/>", msg);
 	// Zamieniamy znaki kontrolne w znaczniki HTML
-	str_tr((char*)msg.c_str() , "\1\2\3" , "<>\"");
+	str_tr((char*)msg.c_str(), "\1\2\3", "<>\"");
 	return msg;
 };
 
@@ -186,14 +186,14 @@ struct FormatState {
 	}
 };
 
-CStdString GG::htmlToMsg(CStdString msgIn , void * formats , int & length) {
+CStdString GG::htmlToMsg(CStdString msgIn, void * formats, int & length) {
 	int max_len = length;
 	length = 0;
 	CStdString msg;
 	SXML XML;
 	RegEx preg;
-	msgIn = preg.replace("#\\r|\\n#" , "" , msgIn);
-	msgIn = preg.replace("#<br/?>#i" , "\n" , msgIn.c_str());
+	msgIn = preg.replace("#\\r|\\n#", "", msgIn);
+	msgIn = preg.replace("#<br/?>#i", "\n", msgIn.c_str());
 	XML.loadSource(msgIn);
 	SXML::NodeWalkInfo ni;
 	size_t last = 0;
@@ -201,7 +201,7 @@ CStdString GG::htmlToMsg(CStdString msgIn , void * formats , int & length) {
 	gg_msg_richtext * rt = (gg_msg_richtext*) formats;
 	formats = rt+1;
 	void * formats_last = formats;
-	memset(formats , 0 , sizeof(gg_msg_richtext_format));
+	memset(formats, 0, sizeof(gg_msg_richtext_format));
 /*
 bleeeee<b>bold<b><font color="#FF0000">gnieø<u>døony</u></font></b>i <i>jesz</i>cze</b>koniec
 */
@@ -211,7 +211,7 @@ bleeeee<b>bold<b><font color="#FF0000">gnieø<u>døony</u></font></b>i <i>jesz</i>
 	while (length < max_len - 20 && XML.nodeWalk(ni)) {
 		XML.pos.start = XML.pos.end;
 		XML.pos.start_end = XML.pos.end_end;
-		msg += Stamina::decodeEntities(msgIn.substr(last , ni.start - last));
+		msg += Stamina::decodeEntities(msgIn.substr(last, ni.start - last));
 		last = ni.end;
 		CStdString token = ni.path.substr(ni.path.find_last_of('/')+1);
 		token.MakeLower();
@@ -225,7 +225,7 @@ bleeeee<b>bold<b><font color="#FF0000">gnieø<u>døony</u></font></b>i <i>jesz</i>
 		} else if (token == "font") {
 			// Kolor musimy "zamknπÊ"
 			if (oper > 0) state.color++;
-			int c = chtoint(XML.getAttrib("color").c_str() , -1);
+			int c = chtoint(XML.getAttrib("color").c_str(), -1);
 			state.rgb[0] = (c & 0xFF0000) >> 16;
 			state.rgb[1] = (c & 0xFF00) >> 8;
 			state.rgb[2] = (c & 0xFF);
@@ -252,7 +252,7 @@ bleeeee<b>bold<b><font color="#FF0000">gnieø<u>døony</u></font></b>i <i>jesz</i>
 				if (!colorStr.empty()) {
 					int color = -1;
 					if (colorStr[0] == '#') {
-						color = Stamina::chtoint(colorStr , -1);
+						color = Stamina::chtoint(colorStr, -1);
 					} else if (colorStr == "red") {
 						color = 0xFF0000;
 					} else if (colorStr == "blue") {

@@ -8,31 +8,29 @@ using Stamina::SXML;
 using Stamina::chtoint;
 
 int GG::check(bool conn, bool session, bool login,  bool warn) {
-    bool err = 0;
+	bool err = 0;
   /* TODO : Rozsadne anulowanie polaczen... */
-/*    if (conn && !session && gg_connect(0,0,0) && !sess) {
-       err = 1;
-       if (warn) ICMessage(IMI_ERROR, (int)"Poczekaj .. Po³¹czenie ju¿ jest zajête!");
-    } else
-*/
-    if (conn && !ICMessage(IMC_CONNECTED))
-      {err = 1;
-    if (warn) ICMessage(IMI_ERROR, (int)"Aby dzia³aæ na serwerze GG musisz byæ po³¹czony z internetem!\nJe¿eli jesteœ po³¹czony sprawdŸ czy prawid³owo skonfigurowa³eœ po³¹czenie w konfiguracji!", MB_TASKMODAL|MB_OK);
-      }
-    else if (session && !sess)
-      {
-				err = 1;
-       if (warn) ICMessage(IMI_ERROR, (int)"Musisz byæ po³¹czony z serwerem GG!", MB_TASKMODAL);
-      }
-    else if (login && !GETINT(CFG_GG_LOGIN))
-      {err=1;
-       if (warn) ICMessage(IMI_ERROR, (int)"Musisz ustawiæ login i has³o konta GG!\nJe¿eli nie masz konta, za³ó¿ je przyciskiem w konfiguracji.",MB_TASKMODAL|MB_OK);
-      }
+	/*if (conn && !session && gg_connect(0,0,0) && !sess) {
+		err = 1;
+			if (warn) ICMessage(IMI_ERROR, (int)"Poczekaj .. Po³¹czenie ju¿ jest zajête!");
+	} else*/
+	if (conn && !ICMessage(IMC_CONNECTED)) {
+		err = 1;
+			if (warn) ICMessage(IMI_ERROR, (int)"Aby dzia³aæ na serwerze GG musisz byæ po³¹czony z internetem!\nJe¿eli jesteœ po³¹czony sprawdŸ czy prawid³owo skonfigurowa³eœ po³¹czenie w konfiguracji!", MB_TASKMODAL|MB_OK);
+	} else if (session && !sess) {
+		err = 1;
+		if (warn) ICMessage(IMI_ERROR, (int)"Musisz byæ po³¹czony z serwerem GG!", MB_TASKMODAL);
+	} else if (login && !GETINT(CFG_GG_LOGIN)) {
+		err = 1;
+		if (warn) ICMessage(IMI_ERROR, (int)"Musisz ustawiæ login i has³o konta GG!\nJe¿eli nie masz konta, za³ó¿ je przyciskiem w konfiguracji.", MB_TASKMODAL|MB_OK);
+	}
 
-    if (err)
-      {Ctrl->setError(IMERROR_NORESULT);return 0;}
-      else
-      return 1;
+	if (err) {
+		Ctrl->setError(IMERROR_NORESULT);
+		return 0;
+	} else {
+		return 1;
+	}
 }
 
 void GG::getAccount(int& login, CStdString& pass) {
@@ -136,7 +134,7 @@ CStdString GG::msgToHtml(CStdString msg, void * formats, int formats_length) {
 		gg_msg_richtext_format * rf = (gg_msg_richtext_format*)formats;
 		if (rf->position >= msg.size())
 			break; // b³¹d
-		msg2+= msg.substr(pos, rf->position - pos);
+		msg2 += msg.substr(pos, rf->position - pos);
 		pos = rf->position;
 		opened.finish(msg2, rf->font);
 		if ((rf->font & GG_FONT_BOLD) && !opened.bold) {
@@ -156,11 +154,11 @@ CStdString GG::msgToHtml(CStdString msg, void * formats, int formats_length) {
 			gg_msg_richtext_color * rc = (gg_msg_richtext_color*) formats;
 			if (rc->red || rc->green || rc->blue) {
 				opened.color=1;
-				msg2+="\1font color=\3#";
-				msg2+=inttostr(rc->red, 16, 2, true);
-				msg2+=inttostr(rc->green, 16, 2, true);
-				msg2+=inttostr(rc->blue, 16, 2, true);
-				msg2+="\3\2";
+				msg2 += "\1font color=\3#";
+				msg2 += inttostr(rc->red, 16, 2, true);
+				msg2 += inttostr(rc->green, 16, 2, true);
+				msg2 += inttostr(rc->blue, 16, 2, true);
+				msg2 += "\3\2";
 			} else opened.color = 0;
 			formats = rc+1;
 		}
@@ -300,5 +298,3 @@ bleeeee<b>bold<b><font color="#FF0000">gnie¿<u>d¿ony</u></font></b>i <i>jesz</i>
 	rt->length = length - sizeof(gg_msg_richtext);
 	return msg;
 };
-
-

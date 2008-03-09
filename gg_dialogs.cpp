@@ -180,12 +180,11 @@ unsigned int __stdcall GG::dlgNewPass(LPVOID lParam) {
 	}
 
 	ICMessage(IMI_LONGEND, (int)&sdl);
-	gg_pubdir * pd = (gg_pubdir*)gghttp->data;
+	gg_pubdir* pd = (gg_pubdir*)gghttp->data;
 	if (pd->success) {
 		UIActionCfgSetValue(sUIAction(IMIG_GGCFG_USER, IMIB_CFG | CFG_GG_PASS), save?pass.c_str():"");
 		SETSTR(CFG_GG_PASS, save?pass.c_str():"");
 	}
-	gg_free_change_passwd(gghttp);
 
 	IMessage(IMI_INFORM, 0, 0 ,
 		pd->success?
@@ -193,7 +192,7 @@ unsigned int __stdcall GG::dlgNewPass(LPVOID lParam) {
 		:
 		(int)stringf("Wyst¹pi³ b³¹d podczas zmiany has³a dla konta %d . SprawdŸ po³¹czenie, oraz czy poda³eœ prawid³owy numer konta i has³o i spróbuj ponownie", ggLogin).c_str()
 	);
-	gg_change_passwd_free(gghttp);
+	gg_free_change_passwd(gghttp);
 	return 0;
 }
 
@@ -228,7 +227,7 @@ unsigned int __stdcall GG::dlgRemindPass(LPVOID lParam) {
 	}
 
 	ICMessage(IMI_LONGEND, (int)&sdl);
-	gg_pubdir * pd = (gg_pubdir*)gghttp->data;
+	gg_pubdir* pd = (gg_pubdir*)gghttp->data;
 
 	IMessage(IMI_INFORM, 0, 0 ,
 		pd->success?
@@ -284,7 +283,10 @@ void GG::dlgListImport() {
 			}
 			delete[] buff;
 			break;
-		} case 2: CloseHandle((HANDLE)Ctrl->BeginThread("ListImport", 0, 0, doListImport, 0, 0, 0)); break;
+		} case 2: {
+			CloseHandle((HANDLE)Ctrl->BeginThread("ListImport", 0, 0, doListImport, 0, 0, 0));
+			break;
+		}
 	}
 	ICMessage(IMC_SAVE_CNT);
 }
@@ -325,7 +327,12 @@ void GG::dlgListExport() {
 			}
 			delete [] buff;
 			break;
-		} case 2: CloseHandle((HANDLE)Ctrl->BeginThread("ListExport", 0, 0, doListExport, 0, 0, 0)); break;
-		case 3: CloseHandle((HANDLE)Ctrl->BeginThread("ListExport", 0, 0, doListExport, (void*)1, 0, 0)); break;
+		} case 2: {
+			CloseHandle((HANDLE)Ctrl->BeginThread("ListExport", 0, 0, doListExport, 0, 0, 0));
+			break;
+		} case 3: {
+			CloseHandle((HANDLE)Ctrl->BeginThread("ListExport", 0, 0, doListExport, (void*)1, 0, 0));
+			break;
+		}
 	}
 }

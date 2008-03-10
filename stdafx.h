@@ -14,7 +14,7 @@
 #include <fcntl.h>
 #include <io.h>
 #include "libgadu\compat_w32.h"
-#include "libgadu\libgadu.h"
+#include "libgadu\libgadu\include\libgadu.h"
 
 #include "konnekt/plug.h"
 #include "konnekt/ui.h"

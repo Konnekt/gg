@@ -124,11 +124,11 @@ unsigned int __stdcall GG::threadProc (void * lpParameter) {
 					success = true;
 					break;
 				} else {
-					if (gglp.failure == GG_FAILURE_PASSWORD) {
+					//if (gglp.failure == GG_FAILURE_PASSWORD) {
 						ICMessage(IMI_CONFIG, IMIG_GGCFG_USER);
 						ICMessage(IMI_ERROR, (int)"Poda³eœ z³y numer konta lub has³o dla GG.\r\nSprawdŸ w konfiguracji i spróbuj po³¹czyæ siê ponownie.");
 						onRequest = true;
-					}
+					//}
 					success = false;
 				}
 				// Nie uda³o siê... usuwamy TLS

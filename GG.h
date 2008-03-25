@@ -1,6 +1,5 @@
 #pragma once
 
-
 #define TIMER_INTERVAL 15 * 1000
 #define PING_INTERVAL 120 * 1000
 #define MSG_TIMEOUT 20
@@ -115,3 +114,5 @@ namespace Konnekt {
 		extern map <int, cGGSearch*> searchMap;
 	}; 
 };
+
+using namespace Konnekt::GG;

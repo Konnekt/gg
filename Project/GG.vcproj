@@ -205,6 +205,10 @@
 			Name="Header Files"
 			>
 			<File
+				RelativePath="..\Controller.h"
+				>
+			</File>
+			<File
 				RelativePath="..\GG.h"
 				>
 			</File>
@@ -226,6 +230,10 @@
 			</File>
 			<File
 				RelativePath="..\ConnTools.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\Controller.cpp"
 				>
 			</File>
 			<File

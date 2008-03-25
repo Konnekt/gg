@@ -1,12 +1,6 @@
 #include "stdafx.h"
-#include <konnekt\lib.h>
-
-using namespace std;
-using Stamina::inttostr;
-
 #include "resource.h"
 #include "GG.h"
-using namespace Konnekt::GG;
 
 bool GG::onRequest = false;
 HANDLE GG::ggThread;

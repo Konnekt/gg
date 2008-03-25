@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "gg_main.h"
+#include "GG.h"
 using namespace Konnekt::GG;
 
 int GG::event(GGER_enum type, void* data) {

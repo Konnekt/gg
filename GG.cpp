@@ -5,7 +5,7 @@ using namespace std;
 using Stamina::inttostr;
 
 #include "resource.h"
-#include "gg_main.h"
+#include "GG.h"
 using namespace Konnekt::GG;
 
 bool GG::onRequest = false;

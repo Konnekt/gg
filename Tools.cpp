@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "gg_main.h"
+#include "GG.h"
 using namespace Konnekt::GG;
 using Stamina::inttostr;
 using Stamina::str_tr;

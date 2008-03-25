@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "gg_main.h"
+#include "GG.h"
 using namespace Konnekt::GG;
 
 void GG::setProxy() {
@@ -201,16 +201,18 @@ bool __stdcall GG::timeoutDialogCB(int type, sDIALOG_long*sd) {
 	switch (type) {
 		case TIMEOUTT_START: break;
 		case TIMEOUTT_END: {
-			//if (sd->timeoutParam) { delete (timeoutDialogParam*) sd->timeoutParam; }
-			//sd->timeoutParam=0; 
-			//ioctlsocket(gg_thread_socket(sd->threadId,0), FIONBIO, 0);
+			/*if (sd->timeoutParam) {
+				delete (timeoutDialogParam*)sd->timeoutParam;
+			}
+			sd->timeoutParam=0; 
+			ioctlsocket(gg_thread_socket(sd->threadId, 0), FIONBIO, 0);*/
 			break;
 		} case TIMEOUTT_TIMEOUT: {
 			disconnectDialogCB(sd);
 			ICMessage((sd->flag & DLONG_NODLG) ? IMC_LOG : IMI_ERROR, (int)"Up³yn¹³ limit czasu po³¹czenia.", 0);
 			return true;
 		} case TIMEOUTT_CHECK: {
-			gg_thread_socket_lock();
+			/*gg_thread_socket_lock();
 			gg_thread* info = gg_thread_find(sd->threadId, 0, 0);
 			if (!info) {
 				gg_thread_socket_unlock();
@@ -219,7 +221,7 @@ bool __stdcall GG::timeoutDialogCB(int type, sDIALOG_long*sd) {
 			int r = WSAWaitForMultipleEvents(1, &info->event, 0, 0, 0);
 
 			gg_thread_socket_unlock();
-			return r == WSA_WAIT_TIMEOUT;
+			return r == WSA_WAIT_TIMEOUT;*/
 		}
 		return 0; /*TODO: Wymyœleæ coœ na timeout!*/
 	}

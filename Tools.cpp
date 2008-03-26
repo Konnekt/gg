@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "GG.h"
-using namespace Konnekt::GG;
-using Stamina::inttostr;
+#include "Controller.h"
+
 using Stamina::str_tr;
 using Stamina::RegEx;
 using Stamina::SXML;
@@ -57,7 +57,7 @@ void GG::getAccount(int& login, CStdString& pass) {
 
 void GG::quickEvent(int Uid, const char* body, const char* ext, int flag) {
 	cMessage m;
-	m.net = NET_GG;
+	m.net = GG::Net;
 	m.type = MT_QUICKEVENT;
 	std::string uid = inttostr(Uid);
 	m.fromUid = (char*)uid.c_str();

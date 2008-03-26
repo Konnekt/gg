@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "GG.h"
+#include "Controller.h"
 
 //bool GG::onRequest = false;
 //HANDLE GG::ggThread;
@@ -59,37 +60,37 @@
 //// *********************************************************
 //int IPrepare() {
 //	ICMessage(IMC_SETCONNECT, 1, 1);
-//	IconRegister(IML_ICO, UIIcon(IT_OVERLAY,NET_GG,0,0), Ctrl->hDll(), IDI_OVERLAY);
-//	IMessage(IMI_ICONRES, 0, 0, UIIcon(4,NET_GG,ST_CONNECTING,0), IDI_CONNECTING);
-//	IMessage(IMI_ICONRES, 0, 0, UIIcon(2,NET_GG,0,0), IDI_ONLINE);
-//	IMessage(IMI_ICONRES, 0, 0, UIIcon(IT_STATUS, NET_GG, ST_BLOCKING, 0), IDI_BLOCKING);
+//	IconRegister(IML_ICO, UIIcon(IT_OVERLAY,GG::Net,0,0), Ctrl->hDll(), IDI_OVERLAY);
+//	IMessage(IMI_ICONRES, 0, 0, UIIcon(4,GG::Net,ST_CONNECTING,0), IDI_CONNECTING);
+//	IMessage(IMI_ICONRES, 0, 0, UIIcon(2,GG::Net,0,0), IDI_ONLINE);
+//	IMessage(IMI_ICONRES, 0, 0, UIIcon(IT_STATUS, GG::Net, ST_BLOCKING, 0), IDI_BLOCKING);
 //	IconRegister(IML_16, IDI_SERVER, Ctrl->hDll(), IDI_SERVER);
-//	IconRegister(IML_32, UIIcon(IT_LOGO,NET_GG,0,0), Ctrl->hDll(), IDI_SERVER);
+//	IconRegister(IML_32, UIIcon(IT_LOGO,GG::Net,0,0), Ctrl->hDll(), IDI_SERVER);
 //
 //	int status = GETINT(CFG_GG_STATUS);
-//	UIGroupInsert(IMIG_STATUS, IMIG_GGSTATUS, -1, 0, "GG", UIIcon(4,NET_GG,ST_OFFLINE,0));
+//	UIGroupInsert(IMIG_STATUS, IMIG_GGSTATUS, -1, 0, "GG", UIIcon(4,GG::Net,ST_OFFLINE,0));
 //	UIActionAdd(IMIG_GGSTATUS, IMIA_GGSTATUS_DESC, 0, "Opis", 0);
 //
 //	UIActionAdd(IMIG_GGSTATUS, IMIG_GGSTATUS_SERVER, ACTR_INIT, "", IDI_SERVER);
-//	UIActionAdd(IMIG_GGSTATUS, IMIA_GGSTATUS_ONLINE, 0, "dostêpny", IMessage(IMI_ICONRES, 0, 0, UIIcon(4, NET_GG, ST_ONLINE, 0), IDI_ONLINE));
-//	UIActionAdd(IMIG_GGSTATUS, IMIA_GGSTATUS_AWAY, 0, "zaraz wracam", IMessage(IMI_ICONRES, 0, 0, UIIcon(4, NET_GG, ST_AWAY, 0), IDI_AWAY));
-//	UIActionAdd(IMIG_GGSTATUS, IMIA_GGSTATUS_HIDDEN, 0, "ukryty", IMessage(IMI_ICONRES, 0, 0, UIIcon(4, NET_GG, ST_HIDDEN, 0), IDI_HIDDEN));
-//	UIActionAdd(IMIG_GGSTATUS, IMIA_GGSTATUS_OFFLINE, 0, "niedostêpny", IMessage(IMI_ICONRES, 0, 0, UIIcon(4, NET_GG, ST_OFFLINE, 0), IDI_OFFLINE));
+//	UIActionAdd(IMIG_GGSTATUS, IMIA_GGSTATUS_ONLINE, 0, "dostêpny", IMessage(IMI_ICONRES, 0, 0, UIIcon(4, GG::Net, ST_ONLINE, 0), IDI_ONLINE));
+//	UIActionAdd(IMIG_GGSTATUS, IMIA_GGSTATUS_AWAY, 0, "zaraz wracam", IMessage(IMI_ICONRES, 0, 0, UIIcon(4, GG::Net, ST_AWAY, 0), IDI_AWAY));
+//	UIActionAdd(IMIG_GGSTATUS, IMIA_GGSTATUS_HIDDEN, 0, "ukryty", IMessage(IMI_ICONRES, 0, 0, UIIcon(4, GG::Net, ST_HIDDEN, 0), IDI_HIDDEN));
+//	UIActionAdd(IMIG_GGSTATUS, IMIA_GGSTATUS_OFFLINE, 0, "niedostêpny", IMessage(IMI_ICONRES, 0, 0, UIIcon(4, GG::Net, ST_OFFLINE, 0), IDI_OFFLINE));
 //
 //	//tray
 //	if (GETINT(CFG_GG_TRAYMENU)) {
 //		UIActionInsert(IMIG_TRAY, IMIA_GGSTATUS_DESC, 0, 0, "Opis", 0 );
-//		UIActionInsert(IMIG_TRAY, IMIA_GGSTATUS_ONLINE, 1, 0, "dostêpny", UIIcon(4, NET_GG, ST_ONLINE, 0));
-//		UIActionInsert(IMIG_TRAY, IMIA_GGSTATUS_AWAY, 2, 0, "zaraz wracam", UIIcon(4, NET_GG, ST_AWAY, 0));
-//		UIActionInsert(IMIG_TRAY, IMIA_GGSTATUS_HIDDEN, 3, 0, "ukryty", UIIcon(4, NET_GG, ST_HIDDEN, 0));
-//		UIActionInsert(IMIG_TRAY, IMIA_GGSTATUS_OFFLINE, 4, ACTT_BARBREAK, "niedostêpny", UIIcon(4, NET_GG, ST_OFFLINE, 0));
+//		UIActionInsert(IMIG_TRAY, IMIA_GGSTATUS_ONLINE, 1, 0, "dostêpny", UIIcon(4, GG::Net, ST_ONLINE, 0));
+//		UIActionInsert(IMIG_TRAY, IMIA_GGSTATUS_AWAY, 2, 0, "zaraz wracam", UIIcon(4, GG::Net, ST_AWAY, 0));
+//		UIActionInsert(IMIG_TRAY, IMIA_GGSTATUS_HIDDEN, 3, 0, "ukryty", UIIcon(4, GG::Net, ST_HIDDEN, 0));
+//		UIActionInsert(IMIG_TRAY, IMIA_GGSTATUS_OFFLINE, 4, ACTT_BARBREAK, "niedostêpny", UIIcon(4, GG::Net, ST_OFFLINE, 0));
 //	}
 //
-//	UIActionAdd(IMIG_NFO_SAVE, IMIA_NFO_GGSAVE, ACTR_INIT, "W katalogu publicznym", UIIcon(IT_LOGO, NET_GG, 0, 0));
-//	UIActionAdd(IMIG_NFO_REFRESH, IMIA_NFO_GGREFRESH, ACTR_INIT, "Katalog publiczny", UIIcon(IT_LOGO, NET_GG, 0, 0));
+//	UIActionAdd(IMIG_NFO_SAVE, IMIA_NFO_GGSAVE, ACTR_INIT, "W katalogu publicznym", UIIcon(IT_LOGO, GG::Net, 0, 0));
+//	UIActionAdd(IMIG_NFO_REFRESH, IMIA_NFO_GGREFRESH, ACTR_INIT, "Katalog publiczny", UIIcon(IT_LOGO, GG::Net, 0, 0));
 //
 //	// Kontakty (g³ówny toolbar)
-//	UIGroupAdd(IMIG_MAIN_CNT, IMIG_MAIN_OPTIONS_LIST_GG,0, "GG", UIIcon(2,NET_GG,0,0));
+//	UIGroupAdd(IMIG_MAIN_CNT, IMIG_MAIN_OPTIONS_LIST_GG,0, "GG", UIIcon(2,GG::Net,0,0));
 //	UIActionAdd(IMIG_MAIN_OPTIONS_LIST_GG, IMIA_LIST_GG_IMPORT, 0, "Importuj listê");
 //	UIActionAdd(IMIG_MAIN_OPTIONS_LIST_GG, IMIA_LIST_GG_EXPORT, 0, "Exportuj listê");
 //	UIActionAdd(IMIG_MAIN_OPTIONS_LIST_GG, IMIA_LIST_GG_CLEAR, 0, "Usuñ kontakty");
@@ -99,7 +100,7 @@
 //	UIActionAdd(IMIG_CNT, IMIA_GGHIDESTATUS, ACTR_INIT, "Ukryj status przed nim", 0);
 //
 //	// Config
-//	UIGroupAdd(IMIG_CFG_USER, IMIG_GGCFG_USER,0,"GG",UIIcon(2,NET_GG,0,0)); {
+//	UIGroupAdd(IMIG_CFG_USER, IMIG_GGCFG_USER,0,"GG",UIIcon(2,GG::Net,0,0)); {
 //		UIActionCfgAddPluginInfoBox2(IMIG_GGCFG_USER, 
 //			"<div>Wtyczka umo¿liwia komunikacjê przy pomocy najpopularniejszego protoko³u w Polsce."
 //			, "Wykorzystano bibliotekê <b>LibGadu</b> (http://toxygen.net/libgadu/)"
@@ -317,7 +318,7 @@
 //			if (IMessage(IMI_CONFIRM, 0, 0, (int)"Wszystkie kontakty sieci Gadu-Gadu™ zostan¹ usuniête!\nKontynuowaæ?", MB_TASKMODAL|MB_OKCANCEL) != IDOK) return 0;
 //			a = ICMessage(IMC_CNT_COUNT);
 //			for (i = 1; i < a; i++) {
-//				if (GETCNTI(i, CNT_NET) == NET_GG) {
+//				if (GETCNTI(i, CNT_NET) == GG::Net) {
 //					ICMessage(IMC_CNT_REMOVE, i);
 //					a--;
 //					i--;
@@ -360,7 +361,7 @@
 //					gg_add_notify_ex(sess, Uid, userType(an->act.cnt));
 //				}
 //			} else if (an->code == ACTN_CREATE) {
-//				if ((signed int)an->act.cnt < 0 || GETCNTI(an->act.cnt,CNT_NET)!=NET_GG) {
+//				if ((signed int)an->act.cnt < 0 || GETCNTI(an->act.cnt,CNT_NET)!=GG::Net) {
 //					UIActionSetStatus(an->act, ACTS_HIDDEN, ACTS_HIDDEN);
 //					return 0;
 //				}
@@ -398,7 +399,7 @@
 //	sDIALOG sd;
 //	cMessage* m;
 //	switch (msg->id) {
-//		case IM_PLUG_NET:          return NET_GG;
+//		case IM_PLUG_NET:          return GG::Net;
 //		case IM_PLUG_TYPE:         return IMT_MESSAGE|IMT_PROTOCOL|IMT_CONTACT|IMT_CONFIG|IMT_UI|IMT_NET|IMT_NETSEARCH|IMT_MESSAGEACK|IMT_MSGUI|IMT_NETUID;
 //		case IM_PLUG_VERSION:      return (int)"";
 //		case IM_PLUG_SDKVERSION:   return KONNEKT_SDK_V;  // Ta linijka jest wymagana!
@@ -494,7 +495,7 @@
 //        some_err:
 //					if (r==-1) {
 //						if (m->flag & MF_NOEVENTS) return 0;
-//						m2.net = NET_GG;
+//						m2.net = GG::Net;
 //						m2.type = MT_QUICKEVENT;
 //						m2.fromUid = m->toUid;
 //						m2.toUid = "";
@@ -511,7 +512,7 @@
 //					}
 //			}
 //		} case IM_CNT_DOWNLOAD: {
-//			if ((Ctrl->DTgetPos(DTCNT, msg->p1) && GETCNTI(msg->p1,CNT_NET) != NET_GG) || !GG::check(1, 1, 0, 1))
+//			if ((Ctrl->DTgetPos(DTCNT, msg->p1) && GETCNTI(msg->p1,CNT_NET) != GG::Net) || !GG::check(1, 1, 0, 1))
 //				break;
 //			Ctrl->BeginThreadAndWait("CntDownload", 0, 0, (cCtrl::fBeginThread) doCntDownload, (void*)msg);
 //			IMDEBUG(DBG_FUNC, "IM_CNT_DOWNLOAD finished");
@@ -524,11 +525,11 @@
 //      return 0;
 //    } case IM_CNT_CHANGED: {
 //			sIMessage_CntChanged icc(msg);
-//			if ((icc._changed.net || icc._changed.uid) && icc._oldNet == NET_GG) {
+//			if ((icc._changed.net || icc._changed.uid) && icc._oldNet == GG::Net) {
 //				gg_remove_notify_ex(sess, atoi(icc._oldUID), ICMessage(IMC_IGN_FIND, icc._oldNet, (int)icc._oldUID) ? GG_USER_BLOCKED : GG_USER_NORMAL);
 //			}
 //		} case IM_CNT_ADD: {  // kontynuacja !
-//			if (sess && GETCNTI(msg->p1,CNT_NET) == NET_GG && !(GETCNTI(msg->p1, CNT_STATUS) & (ST_IGNORED|ST_HIDEMYSTATUS|ST_NOTINLIST))
+//			if (sess && GETCNTI(msg->p1,CNT_NET) == GG::Net && !(GETCNTI(msg->p1, CNT_STATUS) & (ST_IGNORED|ST_HIDEMYSTATUS|ST_NOTINLIST))
 //				/*&& !(GETCNTI(0,CNT_STATUS)&ST_HIDEMYSTATUS)*/) {
 //				gg_remove_notify(sess, atoi((char *)GETCNTC(msg->p1,CNT_UID)));
 //				gg_add_notify_ex(sess, atoi((char *)GETCNTC(msg->p1,CNT_UID)), GG::userType(msg->p1));
@@ -538,7 +539,7 @@
 //			gg_remove_notify_ex(sess, atoi((char*)GETCNTC(msg->p1, CNT_UID)), GG::userType(msg->p1));
 //			return 0;
 //    } case IM_IGN_CHANGED: {
-//			if (abs(msg->p1) != NET_GG) return 0;
+//			if (abs(msg->p1) != GG::Net) return 0;
 //			if (msg->p1 > 0) {
 //				gg_add_notify_ex(sess, atoi((char *)msg->p2),  GG_USER_BLOCKED);
 //			} else {

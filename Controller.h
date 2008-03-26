@@ -29,8 +29,6 @@ namespace GG {
 		void onGetStatus(IMEvent& ev);
 		void onGetStatusInfo(IMEvent& ev);
 		void onGetUID(IMEvent& ev);
-		void onMsgRcv(IMEvent& ev);
-		void onMsgSend(IMEvent& ev);
 		void onCntAdd(IMEvent& ev);
 		void onCntRemove(IMEvent& ev);
 		void onCntChanged(IMEvent& ev);
@@ -40,7 +38,6 @@ namespace GG {
 		void onIgnChanged(IMEvent& ev);
 		void onIsConnected(IMEvent& ev);
 		void onChangeStatus(IMEvent& ev);
-		void onIsConnected(IMEvent& ev);
 
 	public:
 		//akcje

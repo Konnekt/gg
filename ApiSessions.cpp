@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "GG.h"
-using namespace Konnekt::GG;
+#include "Controller.h"
 
 int GG::event(GGER_enum type, void* data) {
 	sIMessage_GGEvent msg;

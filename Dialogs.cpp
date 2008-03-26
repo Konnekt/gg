@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include "GG.h"
-using namespace Konnekt::GG;
-using Stamina::inttostr;
-using Stamina::stringf;
+#include "Controller.h"
 
 #define MAX_STRING 10000
 

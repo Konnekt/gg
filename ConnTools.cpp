@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "GG.h"
-using namespace Konnekt::GG;
+#include "Controller.h"
 
 void GG::setProxy() {
 	static char p_host[100];

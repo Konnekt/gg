@@ -26,8 +26,7 @@ namespace GG {
 		d.connect(IM_GET_STATUS, bind(&Controller::onGetStatus, this, _1));
 		d.connect(IM_GET_STATUSINFO, bind(&Controller::onGetStatusInfo, this, _1));
 		d.connect(IM_GET_UID, bind(&Controller::onGetUID, this, _1));
-		d.connect(IM_MSG_RCV, bind(&Controller::onMsgRcv, this, _1));
-		d.connect(IM_MSG_SEND, bind(&Controller::onMsgSend, this, _1));
+		//TODO: Pamiêtaæ, ¿e zamiast IM_MSG_RCV i IM_MSG_SEND jest nowa MQ
 		d.connect(IM_CNT_ADD, bind(&Controller::onCntAdd, this, _1));
 		d.connect(IM_CNT_REMOVE, bind(&Controller::onCntRemove, this, _1));
 		d.connect(IM_CNT_CHANGED, bind(&Controller::onCntChanged, this, _1));
@@ -37,7 +36,6 @@ namespace GG {
 		d.connect(IM_IGN_CHANGED, bind(&Controller::onIgnChanged, this, _1));
 		d.connect(IM_ISCONNECTED, bind(&Controller::onIsConnected, this, _1));
 		d.connect(IM_CHANGESTATUS, bind(&Controller::onChangeStatus, this, _1));
-		d.connect(IM_ISCONNECTED, bind(&Controller::onIsConnected, this, _1));
 
 		//API
 		//d.connect(api::isEnabled, bind(&Controller::apiEnabled, this, _1));

@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include "GG.h"
-
-using namespace Konnekt::GG;
-using Stamina::inttostr;
+#include "Controller.h"
 
 void GG::onPubdirSearchReply(gg_event *e) {
 	gg_pubdir50_t src = e->event.pubdir50;
@@ -37,7 +35,7 @@ void GG::onPubdirSearchReply(gg_event *e) {
 		if (src->count) {
 			for (int i = 0; i < src->count; i++) {
 				sCNTSEARCH fnd;
-				fnd.net = NET_GG;
+				fnd.net = GG::Net;
 				switch (atoi(SAFECHAR(gg_pubdir50_get(src, i, GG_PUBDIR50_STATUS)))) {
 					case 1: fnd.status = ST_OFFLINE; break;
 					case 2: fnd.status = ST_ONLINE; break;

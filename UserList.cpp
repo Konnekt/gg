@@ -44,9 +44,9 @@ pny;œcie¿ka_dostêpny;wiadomoœæ;œcie¿ka_wiadomoœæ;ukrywanie;telefon_domowy
 
 Funkcje mniej oczywistych pól to:
 
-    * dostêpny okreœla dŸwiêki zwi¹zane z pojawieniem siê danej osoby i przyjmuje wartoœci 0 (u¿yte zostan¹ ustawienia globalne), 1 (dŸwiêk powiadomienia zostanie wy³¹czony), 2 (zostanie odtworzony plik okreœlony w polu œcie¿ka_dostêpny).
-    * wiadomoœæ dzia³a podobnie jak dostêpny, ale okreœla dŸwiêk dla przychodz¹cej wiadomoœci.
-    * ukrywanie okreœla czy bêdziemy dostêpni (0) czy niedostêpni (1) dla danej osoby w trybie tylko dla znajomych.
+	* dostêpny okreœla dŸwiêki zwi¹zane z pojawieniem siê danej osoby i przyjmuje wartoœci 0 (u¿yte zostan¹ ustawienia globalne), 1 (dŸwiêk powiadomienia zostanie wy³¹czony), 2 (zostanie odtworzony plik okreœlony w polu œcie¿ka_dostêpny).
+	* wiadomoœæ dzia³a podobnie jak dostêpny, ale okreœla dŸwiêk dla przychodz¹cej wiadomoœci.
+	* ukrywanie okreœla czy bêdziemy dostêpni (0) czy niedostêpni (1) dla danej osoby w trybie tylko dla znajomych.
 
 Pole niewype³nione mo¿e zostaæ puste, a w przypadku pól liczbowych, przyj¹æ wartoœæ 0. 
 */
@@ -95,9 +95,9 @@ pny;œcie¿ka_dostêpny;wiadomoœæ;œcie¿ka_wiadomoœæ;ukrywanie;telefon_domowy
 
 Funkcje mniej oczywistych pól to:
 
-    * dostêpny okreœla dŸwiêki zwi¹zane z pojawieniem siê danej osoby i przyjmuje wartoœci 0 (u¿yte zostan¹ ustawienia globalne), 1 (dŸwiêk powiadomienia zostanie wy³¹czony), 2 (zostanie odtworzony plik okreœlony w polu œcie¿ka_dostêpny).
-    * wiadomoœæ dzia³a podobnie jak dostêpny, ale okreœla dŸwiêk dla przychodz¹cej wiadomoœci.
-    * ukrywanie okreœla czy bêdziemy dostêpni (0) czy niedostêpni (1) dla danej osoby w trybie tylko dla znajomych.
+	* dostêpny okreœla dŸwiêki zwi¹zane z pojawieniem siê danej osoby i przyjmuje wartoœci 0 (u¿yte zostan¹ ustawienia globalne), 1 (dŸwiêk powiadomienia zostanie wy³¹czony), 2 (zostanie odtworzony plik okreœlony w polu œcie¿ka_dostêpny).
+	* wiadomoœæ dzia³a podobnie jak dostêpny, ale okreœla dŸwiêk dla przychodz¹cej wiadomoœci.
+	* ukrywanie okreœla czy bêdziemy dostêpni (0) czy niedostêpni (1) dla danej osoby w trybie tylko dla znajomych.
 
 Pole niewype³nione mo¿e zostaæ puste, a w przypadku pól liczbowych, przyj¹æ wartoœæ 0. 
 */
@@ -131,7 +131,7 @@ int GG::setUserList(char* _userList) {
 		};
 		res.resize(fPhone + 1);
 		/*
-		0 - imiê; 1 - nazwisko; 2 - pseudonim; 3 - wyœwietlane; 4 - telefon_komórkowy;  
+		0 - imiê; 1 - nazwisko; 2 - pseudonim; 3 - wyœwietlane; 4 - telefon_komórkowy;
 		5 - grupa; 6 - uin; 7 - adres_email; 8 - dostêpny; 9 - œcie¿ka_dostêpny;
 		10 - wiadomoœæ; 11 - œcie¿ka_wiadomoœæ; 12 - ukrywanie; 13 - telefon_domowy;
 		*/
@@ -238,7 +238,7 @@ unsigned int __stdcall GG::doListExport(LPVOID lParam) {
 		}
 	}
 	onUserListRequest = ulrNone;
-	ICMessage(IMI_LONGEND  , (int)&sdl);
+	ICMessage(IMI_LONGEND, (int)&sdl);
 	return 0;
 }
 
@@ -248,7 +248,7 @@ unsigned int __stdcall GG::doListImport(LPVOID lParam) {
 		return 0;
 	}
 	if (!GG::check(1, 1, 0, 1)) return 0;
-	//if (!IMessage(IMI_CONFIRM, 0, 0, (int)"Kontakty zostan¹ wczytane z serwera, zostan¹ dodane nowe kontakty i zaktualizowane istniej¹ce (nic nie zostanie usuniête!)\nKontynuowaæ?"))  _endthread();
+	//if (!IMessage(IMI_CONFIRM, 0, 0, (int)"Kontakty zostan¹ wczytane z serwera, zostan¹ dodane nowe kontakty i zaktualizowane istniej¹ce (nic nie zostanie usuniête!)\nKontynuowaæ?")) _endthread();
 	onUserListRequest = ulrGet;
 	userListBuffer = "";
 	sDIALOG_long sdl;

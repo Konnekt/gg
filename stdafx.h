@@ -21,6 +21,7 @@
 #include <konnekt\ui.h>
 #include <konnekt\plug_export.h>
 #include <konnekt\plug_func.h>
+#include <konnekt\plugsNET.h>
 #include <konnekt\gg.h>
 #include <konnekt\ui_message_controls.h>
 #include <konnekt\lib.h>

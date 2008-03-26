@@ -1,55 +1,62 @@
 #pragma once
 
 #include "GG.h"
-
 #include "Config.h"
 
+namespace GG {
+	class Controller : public iController<Controller> {
+	public:
+		friend class iController<Controller>;
 
-class Controller : public iController<Controller> {
-public:
-  friend class iController<Controller>;
+	public:
+		/**
+		 * Class version macro
+		 */
+		STAMINA_OBJECT_CLASS_VERSION(Controller, iController, Version(1,3,0,0));
 
-public:
-  /**
-   * Class version macro
-   */
-  STAMINA_OBJECT_CLASS_VERSION(Controller, iController, Version(1,3,0,0));
+	public:
+		//typy
 
-public:
-//typy
-protected:
-  Controller();
+	protected:
+		Controller();
 
-protected:
-  /* IMessage callback methods */
-  void _prepare(IMEvent& ev);
-  void _prepareUI(IMEvent& ev);
+	protected:
+		//IMessage
+		void onPrepareUI(IMEvent& ev);
+		void onStart(IMEvent& ev);
+		void onEnd(IMEvent& ev);
+		void onDisconnect(IMEvent& ev);
+		void onGetStatus(IMEvent& ev);
+		void onGetStatusInfo(IMEvent& ev);
+		void onGetUID(IMEvent& ev);
+		void onMsgRcv(IMEvent& ev);
+		void onMsgSend(IMEvent& ev);
+		void onCntAdd(IMEvent& ev);
+		void onCntRemove(IMEvent& ev);
+		void onCntChanged(IMEvent& ev);
+		void onCntDownload(IMEvent& ev);
+		void onCntUpload(IMEvent& ev);
+		void onCntSearch(IMEvent& ev);
+		void onIgnChanged(IMEvent& ev);
+		void onIsConnected(IMEvent& ev);
+		void onChangeStatus(IMEvent& ev);
+		void onIsConnected(IMEvent& ev);
 
-  void onEnd(IMEvent& ev);
-  void onPluginsLoaded(IMEvent& ev);
-  void onExtAutoAway();
-  void onAutoAway(IMEvent& ev);
-  void onBack(IMEvent& ev);
+	public:
+		//akcje
+		//void _handleCntGroup(ActionEvent& ev);
 
-public:
-  // actions
-  void _handleCntGroup(ActionEvent& ev);
-  void _handleMsgTb(ActionEvent& ev);
-  void _handlePowerBtns(ActionEvent& ev);
-  void _handleIgnoreBtn(ActionEvent& ev);
-  void _clearMRU(ActionEvent& ev);
-  void _resetGlobalSettings(ActionEvent& ev);
-  void _resetContactSettings(ActionEvent& ev);
+	public:
+		//API
+		//void apiEnabled(IMEvent& ev);
 
-public:
-  /* API callback methods */
-  void apiEnabled(IMEvent& ev);
+	public:
+		//f-cje
 
-public:
+	protected:
+		//zmienne wewnêtrzne
 
-protected:
-	//zmienne wewnêtrzne
-
-public:
-	//zmienne wewnêtrzne
-};
+	public:
+		//zmienne zewnêtrzne
+	};
+}

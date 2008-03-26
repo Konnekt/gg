@@ -7,9 +7,9 @@ using Stamina::RegEx;
 using Stamina::SXML;
 using Stamina::chtoint;
 
-int GG::check(bool conn, bool session, bool login,  bool warn) {
+int GG::check(bool conn, bool session, bool login, bool warn) {
 	bool err = 0;
-  /* TODO : Rozsadne anulowanie polaczen... */
+	/* TODO : Rozsadne anulowanie polaczen... */
 	/*if (conn && !session && gg_connect(0,0,0) && !sess) {
 		err = 1;
 			if (warn) ICMessage(IMI_ERROR, (int)"Poczekaj .. Po³¹czenie ju¿ jest zajête!");

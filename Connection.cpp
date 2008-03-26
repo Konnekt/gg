@@ -88,7 +88,7 @@ unsigned int __stdcall GG::threadProc (void * lpParameter) {
 		pos = start;
 		bool success = false;
 		CStdString serv; // Aktualnie wybrany serwer
-		serv = servers.substr(pos, servers.find("\n", pos) - pos);           
+		serv = servers.substr(pos, servers.find("\n", pos) - pos);
 		//Gdy SSL, nie u¿ywamy listy serwerów!
 		//if (gglp.tls) serv = "";
 		GG::event(GGER_BEFORELOGIN, &gglp);
@@ -135,7 +135,7 @@ unsigned int __stdcall GG::threadProc (void * lpParameter) {
 				gglp.tls = 0;
 			} // !
 			pos = servers.find("\n", pos) + 1;
-			serv = servers.substr(pos, servers.find("\n", pos) - pos);           
+			serv = servers.substr(pos, servers.find("\n", pos) - pos);
 		} while (!success && pos != start && !onRequest);
 		GG::lastServer = serv;
 		GG::loop = success;
@@ -434,8 +434,8 @@ int GG::connect() {
 	if (!timer)
 		timer = SetTimer(0, 0, TIMER_INTERVAL, (TIMERPROC)GG::timerProc);
 	//ggThread=CreateThread(0,0, GGThreadProc, 0,0,&i);
-  ggThread = (HANDLE)Ctrl->BeginThread("Connect", 0, 0, GG::threadProc, 0, 0, 0);
-  return 1;
+	ggThread = (HANDLE)Ctrl->BeginThread("Connect", 0, 0, GG::threadProc, 0, 0, 0);
+	return 1;
 }
 
 int GG::disconnect() {

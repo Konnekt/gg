@@ -28,7 +28,7 @@ unsigned int __stdcall GG::dlgAccount (LPVOID lParam) {
 
 	string tokenid;
 	string tokenval;
-	if (!GG::getToken("GG  - nowe konto [krok 3/3]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.", tokenid, tokenval))
+	if (!GG::getToken("GG - nowe konto [krok 3/3]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.", tokenid, tokenval))
 		return 0;
 
 	sDIALOG_long sdl;
@@ -42,7 +42,7 @@ unsigned int __stdcall GG::dlgAccount (LPVOID lParam) {
 
 	GG::setProxy();
 	gg_http * gghttp;
-	if (!(gghttp = gg_register3(email.c_str(), pass.c_str() ,tokenid.c_str(),  tokenval.c_str(), 0)) || gghttp->state != GG_STATE_DONE) {
+	if (!(gghttp = gg_register3(email.c_str(), pass.c_str() ,tokenid.c_str(), tokenval.c_str(), 0)) || gghttp->state != GG_STATE_DONE) {
 		ICMessage(IMI_LONGEND, (int)&sdl);
 		IMessage(IMI_ERROR, 0, 0, (int)stringf("Wyst¹pi³ b³¹d podczas zak³adania konta. SprawdŸ po³¹czenie i spróbuj ponownie.").c_str(),0);
 		return 0;
@@ -52,7 +52,7 @@ unsigned int __stdcall GG::dlgAccount (LPVOID lParam) {
 	gg_pubdir * pd = (gg_pubdir*)gghttp->data;
 	if (pd->success) {
 		UIActionCfgSetValue(sUIAction(IMIG_GGCFG_USER, IMIB_CFG | CFG_GG_PASS), save?pass.c_str():"");
-		UIActionCfgSetValue(sUIAction(IMIG_GGCFG_USER,  IMIB_CFG | CFG_GG_LOGIN), inttostr(pd->uin).c_str());
+		UIActionCfgSetValue(sUIAction(IMIG_GGCFG_USER, IMIB_CFG | CFG_GG_LOGIN), inttostr(pd->uin).c_str());
 		SETSTR(CFG_GG_PASS, save?pass.c_str():"");
 		SETINT(CFG_GG_LOGIN, pd->uin);
 		ICMessage(IMC_SAVE_CFG);
@@ -89,7 +89,7 @@ unsigned int __stdcall GG::dlgRemoveAccount (LPVOID lParam) {
 
 	string tokenid;
 	string tokenval;
-	if (!GG::getToken("GG  - usuwanie konta [krok 3/3]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.", tokenid, tokenval))
+	if (!GG::getToken("GG - usuwanie konta [krok 3/3]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.", tokenid, tokenval))
 		return 0;
 
 	sDIALOG_long sdl;
@@ -135,7 +135,7 @@ unsigned int __stdcall GG::dlgNewPass(LPVOID lParam) {
 	sda.flag = 0;
 	sda.title = "GG - zmiana has³a [1/4]";
 	sda.info = "Podaj aktualne has³o.";
-	if (!IMessage(IMI_DLGPASS, 0, 0, (int)&sda, 0))  
+	if (!IMessage(IMI_DLGPASS, 0, 0, (int)&sda, 0))
 		return 0;
 	oldPass = sda.pass;
 
@@ -152,7 +152,7 @@ unsigned int __stdcall GG::dlgNewPass(LPVOID lParam) {
 	sDIALOG_enter sde;
 	sde.title = "GG - zmiana has³a [3/4]";
 	sde.info = "Podaj swój adres email, na który bêdzie mo¿na kiedyœ przes³aæ has³o.";
-	if (!IMessage(IMI_DLGENTER, 0, 0, (int)&sde))  return 0;
+	if (!IMessage(IMI_DLGENTER, 0, 0, (int)&sde)) return 0;
 	string email = sde.value;
 
 	string tokenid;
@@ -197,12 +197,12 @@ unsigned int __stdcall GG::dlgNewPass(LPVOID lParam) {
 }
 
 unsigned int __stdcall GG::dlgRemindPass(LPVOID lParam) {
-	if (!GG::check(1, 0, 1, 1))  return 0;
+	if (!GG::check(1, 0, 1, 1)) return 0;
 
 	sDIALOG_enter sde;
 	sde.title = "GG - przypomnienie has³a [1/2]";
 	sde.info = "Podaj adres email, który wpisa³eœ podczas zak³adania konta. Na ten email otrzymasz has³o.";
-	if (!IMessage(IMI_DLGENTER, 0, 0, (int)&sde))  return 0;
+	if (!IMessage(IMI_DLGENTER, 0, 0, (int)&sde)) return 0;
 	string email = sde.value;
 
 	string tokenid;
@@ -242,8 +242,8 @@ unsigned int __stdcall GG::dlgRemindPass(LPVOID lParam) {
 void GG::dlgListImport() {
 	sDIALOG_choose sd;
 	sd.title = "Import listy kontaktów";
-	sd.info  = "Wybierz sk¹d importowaæ.\nZostan¹ dodane tylko brakuj¹ce kontakty.";
-	sd.flag  = DFLAG_CANCEL;
+	sd.info = "Wybierz sk¹d importowaæ.\nZostan¹ dodane tylko brakuj¹ce kontakty.";
+	sd.flag = DFLAG_CANCEL;
 	sd.items = "Z pliku\nZ Serwera";
 	int r = ICMessage(IMI_DLGBUTTONS, (int)&sd);
 	IMLOG("- Import type %d", r);
@@ -294,8 +294,8 @@ void GG::dlgListImport() {
 void GG::dlgListExport() {
 	sDIALOG_choose sd;
 	sd.title = "Export listy kontaktów";
-	sd.info  = "Wybierz dok¹d exportowaæ.";
-	sd.flag  = DFLAG_CANCEL;
+	sd.info = "Wybierz dok¹d exportowaæ.";
+	sd.flag = DFLAG_CANCEL;
 	sd.items = "Do pliku\nNa Serwer GG\nUsuñ listê z serwera";
 	int r = ICMessage(IMI_DLGBUTTONS, (int)&sd);
 	IMLOG("- Export type %d", r);

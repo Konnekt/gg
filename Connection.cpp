@@ -150,7 +150,7 @@ unsigned int __stdcall GG::threadProc (void * lpParameter) {
 			//if (!(GETCNTI(0,CNT_STATUS)&(ST_HIDEMYSTATUS))) {
 			for (int i=1 ; i<c && j < 400;i++) {
 				int cntStatus = GETCNTI(i, CNT_STATUS);
-				if (GETCNTI(i,CNT_NET) == GG::Net && !(cntStatus & (ST_NOTINLIST))) {
+				if (GETCNTI(i,CNT_NET) == GG::net && !(cntStatus & (ST_NOTINLIST))) {
 					j++;
 					uins[count] = atoi((char *)GETCNTC(i,CNT_UID));
 					types[count] = GG::userType(i);
@@ -162,7 +162,7 @@ unsigned int __stdcall GG::threadProc (void * lpParameter) {
 		gg_notify_ex(sess, uins, types, count);
 		delete [] uins;
 		delete [] types;
-		ICMessage(IMC_MESSAGEQUEUE, (int)&sMESSAGESELECT(GG::Net, 0, MT_MESSAGE, MF_SEND));
+		ICMessage(IMC_MESSAGEQUEUE, (int)&sMESSAGESELECT(GG::net, 0, MT_MESSAGE, MF_SEND));
 
 		/*if (gglp.status_descr) // Dziwny sposob ale dziala
 			setStatus(GETINT(CFG_GG_STATUS),1);
@@ -219,7 +219,7 @@ unsigned int __stdcall GG::threadProc (void * lpParameter) {
 						c = 0;
 						while (n->uin) {
 							c++;
-							a = IMessage(IMC_FINDCONTACT, 0, 0, GG::Net, (int)Stamina::inttostr(n->uin).c_str());
+							a = IMessage(IMC_FINDCONTACT, 0, 0, GG::net, (int)Stamina::inttostr(n->uin).c_str());
 							if (a > 0 && GETCNTI(a, CNT_STATUS) & ST_IGNORED)
 								a = -1;
 							b = ST_OFFLINE;
@@ -253,7 +253,7 @@ unsigned int __stdcall GG::threadProc (void * lpParameter) {
 							ICMessage(IMI_REFRESH_LST);
 						break;
 					} case GG_EVENT_STATUS: {
-						a = IMessage(IMC_FINDCONTACT, 0,0, GG::Net, (int)inttostr(e->event.status.uin).c_str());
+						a = IMessage(IMC_FINDCONTACT, 0,0, GG::net, (int)inttostr(e->event.status.uin).c_str());
 						if (a <= 0) break;
 						if (ICMessage(GETCNTI(a, CNT_STATUS) & ST_IGNORED)) break;
 							b = ST_OFFLINE;
@@ -286,7 +286,7 @@ unsigned int __stdcall GG::threadProc (void * lpParameter) {
 						c = 0;
 						int cnt = -1;
 						while (e->event.notify60[c].uin) {
-							int cnt = IMessage(IMC_FINDCONTACT, 0, 0, GG::Net, (int)inttostr(e->event.notify60[c].uin).c_str());
+							int cnt = IMessage(IMC_FINDCONTACT, 0, 0, GG::net, (int)inttostr(e->event.notify60[c].uin).c_str());
 							if (cnt > 0 && GETCNTI(cnt, CNT_STATUS) & ST_IGNORED) cnt = -1;
 							int status = ST_OFFLINE;
 							switch (e->event.notify60[c].status) {
@@ -320,7 +320,7 @@ unsigned int __stdcall GG::threadProc (void * lpParameter) {
 							ICMessage(IMI_REFRESH_LST);
 						break;
 					} case GG_EVENT_STATUS60: {
-						int cnt = IMessage(IMC_FINDCONTACT, 0, 0, GG::Net, (int)inttostr(e->event.status60.uin).c_str());
+						int cnt = IMessage(IMC_FINDCONTACT, 0, 0, GG::net, (int)inttostr(e->event.status60.uin).c_str());
 						if (cnt <= 0) break;
 						if (ICMessage(GETCNTI(cnt, CNT_STATUS) & ST_IGNORED)) break;
 						b = ST_OFFLINE;
@@ -359,7 +359,7 @@ unsigned int __stdcall GG::threadProc (void * lpParameter) {
 						cMessage m;
 						//ZeroMemory(&m, sizeof(m));
 						//e->event.msg.sender=0;
-						m.net = GG::Net;
+						m.net = GG::net;
 						m.type = e->event.msg.sender?MT_MESSAGE:MT_SERVEREVENT;
 						m.toUid = "";
 						CStdString body;
@@ -378,8 +378,8 @@ unsigned int __stdcall GG::threadProc (void * lpParameter) {
 						m.ext = "";
 						m.flag |= MF_HANDLEDBYUI;
 						m.time = min(_time64(0), e->event.msg.time);
-						ICMessage(IMI_CNT_ACTIVITY, IMessage(IMC_FINDCONTACT, 0,0, GG::Net, (int)m.fromUid));
-						if (ICMessage(IMC_CNT_IGNORED, GG::Net, (int)m.fromUid)) {
+						ICMessage(IMI_CNT_ACTIVITY, IMessage(IMC_FINDCONTACT, 0,0, GG::net, (int)m.fromUid));
+						if (ICMessage(IMC_CNT_IGNORED, GG::net, (int)m.fromUid)) {
 							sHISTORYADD ha;
 							ha.m = &m;
 							ha.dir = HISTORY_IGNORED_DIR;
@@ -414,7 +414,7 @@ unsigned int __stdcall GG::threadProc (void * lpParameter) {
 			// Wyzerowanie statusow na liscie
 			c = IMessage(IMC_CNT_COUNT);
 			for (int i=1 ; i<c;i++) {
-				if (GETCNTI(i,CNT_NET) == GG::Net) {
+				if (GETCNTI(i,CNT_NET) == GG::net) {
 					CntSetStatus(i, ST_OFFLINE, "");
 					ICMessage(IMI_CNT_DEACTIVATE, i);
 				}

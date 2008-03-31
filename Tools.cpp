@@ -57,7 +57,7 @@ void GG::getAccount(int& login, CStdString& pass) {
 
 void GG::quickEvent(int Uid, const char* body, const char* ext, int flag) {
 	cMessage m;
-	m.net = GG::Net;
+	m.net = GG::net;
 	m.type = MT_QUICKEVENT;
 	std::string uid = inttostr(Uid);
 	m.fromUid = (char*)uid.c_str();

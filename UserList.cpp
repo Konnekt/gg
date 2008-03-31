@@ -68,7 +68,7 @@ string GG::getUserList () {
 	for (int i = 1; i < a; i++) {
 		int net = GETCNTI(i, CNT_NET);
 		// Bierze kontakty GG, bez sieci i tylko takie, które maj¹ wartoœæ display, albo UID
-		if ((net == GG::Net || net == NET_NONE) && (GETCNTC(i, CNT_DISPLAY)[0] || (net && GETCNTC (i, CNT_UID)))) {
+		if ((net == GG::net || net == NET_NONE) && (GETCNTC(i, CNT_DISPLAY)[0] || (net && GETCNTC (i, CNT_UID)))) {
 			string separator = ";";
 			str += GETCNTC (i, CNT_NAME) + separator;
 			str += GETCNTC (i, CNT_SURNAME) + separator;
@@ -76,7 +76,7 @@ string GG::getUserList () {
 			str += GETCNTC (i, CNT_DISPLAY) + separator;
 			str += GETCNTC (i, CNT_CELLPHONE) + separator;
 			str += GETCNTC (i, CNT_GROUP) + separator;
-			str += (net == GG::Net ? GETCNTC (i, CNT_UID) : "") + separator;
+			str += (net == GG::net ? GETCNTC (i, CNT_UID) : "") + separator;
 			str += GETCNTC (i, CNT_EMAIL) + separator;
 			str += getSoundSetting(i, "newUser") + separator;
 			str += getSoundSetting(i, "newMsg") + separator;
@@ -154,9 +154,9 @@ int GG::setUserList(char* _userList) {
 				}
 			}
 		} else {
-			pos = ICMessage(IMC_CNT_FIND, GG::Net, (int)(res[fUin].c_str()));
+			pos = ICMessage(IMC_CNT_FIND, GG::net, (int)(res[fUin].c_str()));
 		}
-		if (pos <= 0) pos = ICMessage(IMC_CNT_ADD, res[fUin].empty() ? NET_NONE : GG::Net, (int)res[fUin].c_str());
+		if (pos <= 0) pos = ICMessage(IMC_CNT_ADD, res[fUin].empty() ? NET_NONE : GG::net, (int)res[fUin].c_str());
 
 		if (res[fName].empty() == false) SETCNTC(pos, CNT_NAME, res[fName].c_str());
 		if (res[fSurname].empty() == false) SETCNTC(pos, CNT_SURNAME, res[fSurname].c_str());
@@ -289,7 +289,7 @@ unsigned int __stdcall GG::dlgListRefresh(LPVOID lParam) {
 	int a = ICMessage(IMC_CNT_COUNT);
 	for (int i = 1; i < a; i++) {
 		if (sdl.cancel) break;
-		if (GETCNTI (i, CNT_NET) == GG::Net) {
+		if (GETCNTI (i, CNT_NET) == GG::net) {
 			IMLOG("IM_CNT");
 			IMessageDirect(IM_CNT_DOWNLOAD, 0, i);
 			IMLOG("IM_CNT.done");

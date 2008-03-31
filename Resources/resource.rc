@@ -28,15 +28,15 @@ LANGUAGE LANG_POLISH, SUBLANG_DEFAULT
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ONLINE              ICON                    "res/online.ico"
-IDI_OFFLINE             ICON                    "res/offline.ico"
-IDI_AWAY                ICON                    "res/away.ico"
-IDI_HIDDEN              ICON                    "res/hidden.ico"
-IDI_CONNECTING          ICON                    "res/connecting.ico"
-IDI_BLOCKING            ICON                    "res/blocking.ico"
-IDI_OVERLAY             ICON                    "res/overlay.ico"
-IDI_SERVER              ICON                    "res/serwer.ico"
-GGLOGO                  ICON                    "res/logo.ico"
+IDI_LOGO                ICON                    "../Resources/Icons/logo.ico"
+IDI_SERVER              ICON                    "../Resources/Icons/serwer.ico"
+IDI_OVERLAY             ICON                    "../Resources/Icons/overlay.ico"
+IDI_ONLINE              ICON                    "../Resources/Icons/online.ico"
+IDI_AWAY                ICON                    "../Resources/Icons/away.ico"
+IDI_INVISIBLE           ICON                    "../Resources/Icons/hidden.ico"
+IDI_OFFLINE             ICON                    "../Resources/Icons/offline.ico"
+IDI_BLOCKING            ICON                    "../Resources/Icons/blocking.ico"
+IDI_CONNECTING          ICON                    "../Resources/Icons/connecting.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //

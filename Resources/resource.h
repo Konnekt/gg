@@ -1,13 +1,9 @@
-
-#define IDI_ONLINE   100
-#define IDI_OFFLINE  101
-#define IDI_HIDDEN   102
-#define IDI_AWAY   103
-#define IDI_CONNECTING   104
-#define IDI_BLOCKING   106
-
-#define IDI_SERVER   10010
-
-#define IDI_OVERLAY   105
-
-#define IDI_LOGO 10000
+#define IDI_LOGO 100
+#define IDI_SERVER 101
+#define IDI_OVERLAY 102
+#define IDI_ONLINE 103
+#define IDI_AWAY 104
+#define IDI_INVISIBLE 105
+#define IDI_OFFLINE 106
+#define IDI_BLOCKING 107
+#define IDI_CONNECTING 108

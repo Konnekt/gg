@@ -33,5 +33,7 @@
 #include <Stamina\SimXML.h>
 #include <Stamina\TLS.h>
 
+#include "Resources/resource.h"
+
 using namespace std;
 using Stamina::inttostr;

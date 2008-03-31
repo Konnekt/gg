@@ -8,11 +8,26 @@
 #define PUBDIR_TIMEOUT TIMEOUT * 2
 
 namespace GG {
-	const unsigned Net = 10; // wartoœæ NET
-	const int Sig = (int)"GG"; //sygnatura
-	const int Name = (int)"Gadu-Gadu"; //nazwa
+	//TODO: Net w jakiœ sposób bêdzie dynamiczny.
+	const unsigned net = 10; // wartoœæ NET
+	const int sig = (int)"GG"; //sygnatura
+	const int name = (int)"Gadu-Gadu"; //nazwa
 
-	namespace Cfg {
+	namespace CFG {
+		const unsigned group = net * 1000;
+		const unsigned login = group + 1;
+		const unsigned password = group + 2;
+		const unsigned status = group + 3;
+		const unsigned startStatus = group + 4;
+		const unsigned description = group + 5;
+		const unsigned friendsOnly = group + 6;
+		const unsigned servers = group + 7;
+		const unsigned choosenServer = group + 8;
+		const unsigned trayMenu = group + 9;
+		const unsigned useSSL = group + 10;
+		const unsigned resumeDisconnected = group + 11;
+		
+		/* TODO: Stare id kolumn; zapewne przydadz¹ siê przy pisaniu f-cji updatuj¹cej plugin.
 		const unsigned login = 1053;
 		const unsigned password = 1054;
 		const unsigned status = 1055;
@@ -23,7 +38,22 @@ namespace GG {
 		const unsigned choosenServer = 1060;
 		const unsigned trayMenu = 1061;
 		const unsigned useSSL = 1063;
-		const unsigned resumeDisconnected = 1064;
+		const unsigned resumeDisconnected = 1064;*/
+	};
+	
+	namespace ACT {
+	};
+	
+	namespace ICO {
+		const unsigned logo = net * 1000 + 300;
+		const unsigned server = net * 1000 + 301;
+		const unsigned overlay = net * 1000 + 302;
+		const unsigned online = net * 1000 + 303;
+		const unsigned away = net * 1000 + 304;
+		const unsigned invisible = net * 1000 + 305;
+		const unsigned offline = net * 1000 + 306;
+		const unsigned blocking = net * 1000 + 307;
+		const unsigned connecting = net * 1000 + 308;
 	};
 
 	enum userListRequest {

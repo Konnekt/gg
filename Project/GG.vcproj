@@ -17,10 +17,9 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\$(ConfigurationName)"
-			IntermediateDirectory="Temp\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="Temp\$(ConfigurationName)\"
 			ConfigurationType="2"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -43,16 +42,14 @@
 				Optimization="0"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;GG_EXPORTS"
-				StringPooling="true"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				StructMemberAlignment="0"
 				BufferSecurityCheck="true"
-				DefaultCharIsUnsigned="true"
 				UsePrecompiledHeader="2"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="false"
+				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -66,17 +63,16 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Msimg32.lib Version.lib ws2_32.lib stamina_d.lib libgadu_d.lib"
-				OutputFile="$(OutDir)/gg.dll"
+				AdditionalDependencies="stamina_d.lib"
+				OutputFile="$(OutDir)\gg.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
-				IgnoreAllDefaultLibraries="false"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(IntDir)/$(ProjectName).pdb"
+				ProgramDatabaseFile="$(IntDir)$(TargetName).pdb"
 				SubSystem="2"
 				ProfileGuidedDatabase=""
-				ImportLibrary="$(OutDir)/gg.lib"
+				ImportLibrary="$(IntDir)/gg.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -106,10 +102,9 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\$(ConfigurationName)"
-			IntermediateDirectory="Temp\$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="Temp\$(ConfigurationName)\"
 			ConfigurationType="2"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -130,19 +125,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="1"
-				InlineFunctionExpansion="1"
-				FavorSizeOrSpeed="2"
-				OmitFramePointers="true"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GG_EXPORTS"
-				StringPooling="true"
 				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				DefaultCharIsUnsigned="true"
 				UsePrecompiledHeader="2"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="false"
+				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -156,20 +144,18 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Msimg32.lib Version.lib ws2_32.lib stamina.lib libgadu.lib"
-				OutputFile="$(OutDir)/gg.dll"
+				AdditionalDependencies="stamina.lib"
+				OutputFile="$(OutDir)\gg.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(IntDir)/$(ProjectName).pdb"
-				GenerateMapFile="true"
-				MapFileName="$(IntDir)/$(ProjectName).pdb"
-				MapExports="true"
+				ProgramDatabaseFile="$(IntDir)$(TargetName).pdb"
+				MapFileName=""
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				ProfileGuidedDatabase="$(IntDir)/$(ProjectName).pgd"
-				ImportLibrary="$(OutDir)/gg.lib"
+				ProfileGuidedDatabase=""
+				ImportLibrary="$(IntDir)/gg.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -393,7 +379,39 @@
 			Name="Resource Files"
 			>
 			<File
+				RelativePath="..\Resources\Icons\away.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\Resources\Icons\blocking.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\Resources\Icons\connecting.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\Resources\Icons\hidden.ico"
+				>
+			</File>
+			<File
 				RelativePath=".\license.txt"
+				>
+			</File>
+			<File
+				RelativePath="..\Resources\Icons\logo.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\Resources\Icons\offline.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\Resources\Icons\online.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\Resources\Icons\overlay.ico"
 				>
 			</File>
 			<File
@@ -402,6 +420,10 @@
 			</File>
 			<File
 				RelativePath="..\Resources\resource.rc"
+				>
+			</File>
+			<File
+				RelativePath="..\Resources\Icons\serwer.ico"
 				>
 			</File>
 		</Filter>

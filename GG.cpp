@@ -1,7 +1,3 @@
-#include "stdafx.h"
-#include "GG.h"
-#include "Controller.h"
-
 //bool GG::onRequest = false;
 //HANDLE GG::ggThread;
 //int GG::ggThreadId;
@@ -26,11 +22,6 @@
 //tMsgSent GG::msgSent;
 //CRITICAL_SECTION GG::searchMap_CS;
 //map <int, cGGSearch*> GG::searchMap;
-//
-//
-//int WINAPI DllEntryPoint(HINSTANCE hinst, unsigned long reason, void* lpReserved) {
-//	return 1;
-//}
 //
 //int Init() {
 //	InitializeCriticalSection(&msgSent_CS);
@@ -613,6 +604,13 @@
 //	if (Ctrl) Ctrl->setError(IMERROR_NORESULT);
 //	return 0;
 //}
+
+#include "StdAfx.h"
+#include "Controller.h"
+
+int __stdcall DllMain(void* hinstDLL, unsigned long fdwReason, void* lpvReserved) {
+  return true;
+}
 
 int __stdcall IMessageProc(sIMessage_base* msgBase) {
   return Controller::getInstance()->dispatch(msgBase);

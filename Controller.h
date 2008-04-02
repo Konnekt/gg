@@ -1,18 +1,11 @@
 #pragma once
 
 #include "GG.h"
-#include "Config.h"
 
 namespace GG {
 	class Controller : public iController<Controller> {
 	public:
 		friend class iController<Controller>;
-
-	public:
-		/**
-		 * Class version macro
-		 */
-		STAMINA_OBJECT_CLASS_VERSION(Controller, iController, Version(1,3,0,0));
 
 	public:
 		//typy

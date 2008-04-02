@@ -1,5 +1,6 @@
 // Microsoft Visual C++ generated resource script.
 //
+#include "resource.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -7,7 +8,6 @@
 // Generated from the TEXTINCLUDE 2 resource.
 //
 #include "afxres.h"
-#include "resource.h"
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -28,25 +28,27 @@ LANGUAGE LANG_POLISH, SUBLANG_DEFAULT
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_LOGO                ICON                    "../Resources/Icons/logo.ico"
-IDI_SERVER              ICON                    "../Resources/Icons/serwer.ico"
-IDI_OVERLAY             ICON                    "../Resources/Icons/overlay.ico"
-IDI_ONLINE              ICON                    "../Resources/Icons/online.ico"
-IDI_AWAY                ICON                    "../Resources/Icons/away.ico"
-IDI_INVISIBLE           ICON                    "../Resources/Icons/hidden.ico"
-IDI_OFFLINE             ICON                    "../Resources/Icons/offline.ico"
-IDI_BLOCKING            ICON                    "../Resources/Icons/blocking.ico"
-IDI_CONNECTING          ICON                    "../Resources/Icons/connecting.ico"
+IDI_LOGO                ICON                    "..//Resources//Icons//logo.ico"
+IDI_SERVER              ICON                    "..//Resources//Icons//serwer.ico"
+IDI_OVERLAY             ICON                    "..//Resources//Icons//overlay.ico"
+IDI_ONLINE              ICON                    "..//Resources//Icons//online.ico"
+IDI_AWAY                ICON                    "..//Resources//Icons//away.ico"
+IDI_INVISIBLE           ICON                    "..//Resources//Icons//hidden.ico"
+IDI_OFFLINE             ICON                    "..//Resources//Icons//offline.ico"
+IDI_BLOCKING            ICON                    "..//Resources//Icons//blocking.ico"
+IDI_CONNECTING          ICON                    "..//Resources//Icons//connecting.ico"
+#endif    // Polish resources
+/////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // Version
 //
 
-1 VERSIONINFO
- FILEVERSION 1,7,2,0
- PRODUCTVERSION 0,6,0,0
- FILEFLAGSMASK 0x0L
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,3,0,109
+ PRODUCTVERSION 1,3,0,109
+ FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
 #else
@@ -58,26 +60,34 @@ IDI_CONNECTING          ICON                    "../Resources/Icons/connecting.i
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
-        BLOCK "041504e2"
+        BLOCK "041504b0"
         BEGIN
             VALUE "Comments", "wiêcej informacji o Gadu-Gadu™ - http://www.gadu-gadu.pl/"
             VALUE "CompanyName", "stamina"
             VALUE "FileDescription", "protokó³ Gadu-Gadu™"
-            VALUE "FileVersion", "1.8.0"
+            VALUE "FileVersion", "1.8.0.0"
             VALUE "InternalName", "GG"
             VALUE "LegalCopyright", "©2003,2004,2005 Stamina"
             VALUE "LegalTrademarks", """Gadu-gadu"" jest zastrze¿onym znakiem towarowym sms-express sp. z o.o. "
             VALUE "ProductName", "Konnekt"
-            VALUE "ProductVersion", "0.6"
+            VALUE "ProductVersion", "1.8.0.0"
             VALUE "URL", "http://www.konnekt.info/"
         END
     END
     BLOCK "VarFileInfo"
     BEGIN
-        VALUE "Translation", 0x415, 1250
+        VALUE "Translation", 0x415, 1200
     END
 END
 
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -87,13 +97,12 @@ END
 
 1 TEXTINCLUDE 
 BEGIN
-    "resrc1.h\0"
+    "resource.h\0"
 END
 
 2 TEXTINCLUDE 
 BEGIN
     "#include ""afxres.h""\r\n"
-    "#include ""resource.h""\r\n"
     "\0"
 END
 
@@ -105,13 +114,7 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// String Table
-//
-
-#endif    // Polish resources
+#endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

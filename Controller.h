@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GG.h"
+#include "Dialogs.h"
 
 namespace GG {
 	class Controller : public iController<Controller> {
@@ -34,7 +35,12 @@ namespace GG {
 
 	public:
 		//akcje
-		//void _handleCntGroup(ActionEvent& ev);
+		void handleSetDefaultServers(ActionEvent& ev);
+		void handleCreateGGAccount(ActionEvent& ev);
+		void handleRemoveGGAccount(ActionEvent& ev);
+		void handleChangePassword(ActionEvent& ev);
+		void handleRemindPassword(ActionEvent& ev);
+		void handleImportCntList(ActionEvent& ev);
 
 	public:
 		//API
@@ -42,6 +48,7 @@ namespace GG {
 
 	public:
 		//f-cje
+		void setProxy();
 
 	protected:
 		//zmienne wewnêtrzne

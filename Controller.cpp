@@ -41,7 +41,11 @@ namespace GG {
 		//d.connect(api::isEnabled, bind(&Controller::apiEnabled, this, _1));
 
 		//Akcje
-		//a.connect(ui::cntCfgGroup, bind(&Controller::_handleCntGroup, this, _1));
+		a.connect(ACT::setDefaultServers, bind(&Controller::handleSetDefaultServers, this, _1));
+		a.connect(ACT::createGGAccount, bind(&Controller::handleCreateGGAccount, this, _1));
+		a.connect(ACT::removeGGAccount, bind(&Controller::handleRemoveGGAccount, this, _1));
+		a.connect(ACT::changePassword, bind(&Controller::handleChangePassword, this, _1));
+		a.connect(ACT::remindPassword, bind(&Controller::handleRemindPassword, this, _1));
 
 		//Konfiguracja
 		c.setColumn(tableConfig, CFG::login, ctypeString, "", "GG/login");
@@ -50,14 +54,14 @@ namespace GG {
 		c.setColumn(tableConfig, CFG::startStatus, ctypeInt, 0, "GG/startStatus");
 		c.setColumn(tableConfig, CFG::friendsOnly, ctypeInt, 0, "GG/friedsOnly");
 		c.setColumn(tableConfig, CFG::description, ctypeString, "", "GG/description");
-		c.setColumn(tableConfig, CFG::servers, ctypeString, "s1.gadu-gadu.pl\r\n\r\n217.17.41.83\r\n217.17.41.84\r\n217.17.41.85\r\n217.17.41.86\r\n217.17.41.87\r\n217.17.41.88\r\n217.17.41.92", "GG/servers");
-		c.setColumn(tableConfig, CFG::trayMenu, ctypeInt, 0, "GG/trayMenu");
+		c.setColumn(tableConfig, CFG::servers, ctypeString, GG::defaultServers, "GG/servers");
 		c.setColumn(tableConfig, CFG::useSSL, ctypeInt, 0, "GG/useSSL");
-		c.setColumn(tableConfig, CFG::resumeDisconnected, ctypeInt, 0, "GG/resumeDisconnected");
+		c.setColumn(tableConfig, CFG::resumeDisconnected, ctypeInt, 1, "GG/resumeDisconnected");
 	}
 	
 	void Controller::onPrepareUI(IMEvent &ev) {
 		//Ikony
+		//TODO: Nie rejestruj¹ siê; czemu?
 		IconRegister(IML_16, ICO::logo, Ctrl->hDll(), IDI_LOGO);
 		IconRegister(IML_16, ICO::server, Ctrl->hDll(), IDI_SERVER);
 		IconRegister(IML_16, ICO::overlay, Ctrl->hDll(), IDI_OVERLAY);
@@ -80,17 +84,17 @@ namespace GG {
 		);
 
 		UIActionCfgAdd(CFG::group, 0, ACTT_GROUP, "Konto na serwerze GG");
-		UIActionCfgAdd(CFG::group, 0, ACTT_COMMENT | ACTSC_INLINE, "Numer GG", 0, 0);
-		UIActionCfgAdd(CFG::group, CFG::login, ACTT_EDIT | ACTSC_INT, "", CFG::login, 44);
-		UIActionCfgAdd(CFG::group, 0, ACTT_COMMENT | ACTSC_INLINE, "Has³o", 0, 0);
-		UIActionCfgAdd(CFG::group, CFG::password, ACTT_PASSWORD, "", CFG::password, 65);
+		UIActionCfgAdd(CFG::group, 0, ACTT_COMMENT | ACTSC_INLINE, "Numer GG", 0, 0, 0, 60);
+		UIActionCfgAdd(CFG::group, CFG::login, ACTT_EDIT | ACTSC_INT, "", CFG::login);
+		UIActionCfgAdd(CFG::group, 0, ACTT_COMMENT | ACTSC_INLINE, "Has³o", 0, 0, 0, 60);
+		UIActionCfgAdd(CFG::group, CFG::password, ACTT_PASSWORD, "", CFG::password);
 
 		UIActionAdd(CFG::group, 0, ACTT_SEPARATOR);
 
-		UIActionAdd(CFG::group, IMIC_GG_ACCOUNT, ACTT_BUTTON | ACTSC_INLINE | ACTSC_BOLD, SetActParam("Za³ó¿ konto", AP_ICO, inttostr(ICON_ACCOUNTCREATE)).c_str(), 0, 155, 30);
-		UIActionAdd(CFG::group, IMIA_LIST_GG_IMPORT, ACTT_BUTTON | ACTSC_BOLD | ACTSC_FULLWIDTH, SetActParam("Importuj listê kontaktów", AP_ICO, inttostr(ICON_IMPORT)).c_str(), 0, 180, 30);
-		UIActionAdd(CFG::group, IMIC_GG_NEWPASS, ACTT_BUTTON | ACTSC_INLINE, SetActParam("Zmieñ has³o", AP_ICO, inttostr(ICON_CHANGEPASSWORD)).c_str(), 0, 155, 30);
-		UIActionAdd(CFG::group, IMIC_GG_REMINDPASS, ACTT_BUTTON | ACTSC_FULLWIDTH, SetActParam("Przypomnij has³o", AP_ICO, inttostr(ICON_REMINDPASSWORD)).c_str(), 0, 180, 30);
+		UIActionAdd(CFG::group, ACT::createGGAccount, ACTT_BUTTON | ACTSC_INLINE | ACTSC_BOLD, SetActParam("Za³ó¿ konto", AP_ICO, inttostr(ICON_ACCOUNTCREATE)).c_str(), 0, 155, 30);
+		UIActionAdd(CFG::group, ACT::importCntList, ACTT_BUTTON | ACTSC_BOLD | ACTSC_FULLWIDTH, SetActParam("Importuj listê kontaktów", AP_ICO, inttostr(ICON_IMPORT)).c_str(), 0, 180, 30);
+		UIActionAdd(CFG::group, ACT::changePassword, ACTT_BUTTON | ACTSC_INLINE, SetActParam("Zmieñ has³o", AP_ICO, inttostr(ICON_CHANGEPASSWORD)).c_str(), 0, 155, 30);
+		UIActionAdd(CFG::group, ACT::remindPassword, ACTT_BUTTON | ACTSC_FULLWIDTH, SetActParam("Przypomnij has³o", AP_ICO, inttostr(ICON_REMINDPASSWORD)).c_str(), 0, 180, 30);
 		UIActionAdd(CFG::group, 0, ACTT_GROUPEND, "");
 
 		UIActionAdd(CFG::group, 0, ACTT_GROUP, "Ustawienia");
@@ -103,10 +107,9 @@ namespace GG {
 			AP_PARAMS AP_TIP "Status, który zostanie ustawiony po uruchomieniu programu", 
 			CFG::startStatus
 		);
-		UIActionAdd(CFG::group, 0, ACTT_COMMENT, "Status startowy");
-		UIActionAdd(CFG::group, CFG::useSSL, ACTT_CHECK, "U¿ywaj bezpiecznego po³¹czenia, jeœli to mo¿liwe", CFG::useSSL);
+		//UIActionAdd(CFG::group, 0, ACTT_COMMENT, "Status startowy");
+		UIActionAdd(CFG::group, CFG::useSSL, ACTT_CHECK, "U¿ywaj bezpiecznego po³¹czenia (SSL)", CFG::useSSL);
 		UIActionAdd(CFG::group, CFG::friendsOnly, ACTT_CHECK, "Mój status widoczny tylko u znajomych z mojej listy", CFG::friendsOnly);
-		UIActionAdd(CFG::group, CFG::trayMenu, ACTT_CHECK | ACTSC_NEEDRESTART, "Pe³ne menu w zasobniku systemowym" AP_TIP "Wszystkie statusy bêd¹ dostêpne bezpoœrednio w menu zasobnika (tray)", CFG::trayMenu);
 		UIActionAdd(CFG::group, CFG::resumeDisconnected, ACTT_CHECK, "£¹cz ponownie je¿eli serwer zakoñczy po³¹czenie." AP_TIP "Wy³¹cz t¹ opcjê, je¿eli czêsto korzystasz z konta w ró¿nych miejscach. Zapobiega cyklicznemu \"prze³¹czaniu\" pomiêdzy w³¹czonymi programami.", CFG::resumeDisconnected);
 		UIActionAdd(CFG::group, 0, ACTT_GROUPEND);
 
@@ -115,19 +118,74 @@ namespace GG {
 		UIActionAdd(CFG::group, 0, ACTT_TIPBUTTON | ACTSC_INLINE, AP_TIPRICH "W ka¿dej linijce jeden serwer. Pusta linijka oznacza HUB (system zwracaj¹cy najmniej obci¹¿ony serwer)."
 			"<br/><b>Format</b> (zawartoœæ [...] jest opcjonalna):"
 			"<br/><i>Adres</i>[:<i>port</i>]"
-			"<br/><b>SSL</b>[ <i>Adres</i>[:<i>port</i>]] (po³¹czenie szyfrowane)"
+			"<br/>SSL[ <i>Adres</i>[:<i>port</i>]] (po³¹czenie szyfrowane)"
 			"<br/><br/>Aby wy³¹czyæ serwer dodaj <b>!</b> na pocz¹tku."
 			AP_TIPRICH_WIDTH "300"
 		);
-		UIActionAdd(CFG::group, IMIC_GG_DEFSERVERS, ACTT_BUTTON | ACTSC_INLINE, SetActParam("Domyœlne", AP_ICO, inttostr(ICON_DEFAULT)).c_str(), 0, 0, 25);
-		UIActionAdd(CFG::group, IMIC_GG_SERVERSSSLONLY, ACTT_BUTTON, SetActParam("Tylko SSL", AP_ICO, inttostr(ICON_SECURE)).c_str(), 0, 0, 25);
+		UIActionAdd(CFG::group, ACT::setDefaultServers, ACTT_BUTTON, SetActParam("Domyœlne", AP_ICO, inttostr(ICON_DEFAULT)).c_str(), 0, 0, 25);
 		UIActionAdd(CFG::group, 0, ACTT_GROUPEND, "");
 
 		UIActionAdd(CFG::group, 0, ACTT_GROUP, "");
 		UIActionAdd(CFG::group, 0, ACTT_TIPBUTTON | ACTSC_INLINE, SetActParam(AP_TIPRICH "<b>UWAGA!</b> Konto zostanie <u>bezpowrotnie</u> usuniête z serwera GG! Nie bêdziesz móg³ wiêcej korzystaæ z tego numeru!", AP_ICO, inttostr(ICON_WARNING)).c_str(), 0, 30, 30);
-		UIActionAdd(CFG::group, IMIC_GG_REMOVEACCOUNT, ACTT_BUTTON, SetActParam("Usuñ konto z serwera", AP_ICO, inttostr(ICON_ACCOUNTREMOVE)).c_str(), 0, 170, 30);
+		UIActionAdd(CFG::group, ACT::removeGGAccount, ACTT_BUTTON, SetActParam("Usuñ konto z serwera", AP_ICO, inttostr(ICON_ACCOUNTREMOVE)).c_str(), 0, 170, 30);
 		UIActionAdd(CFG::group, 0, ACTT_GROUPEND, "");
-		
+
 		ev.setSuccess();
+	}
+	
+	void Controller::handleSetDefaultServers(Konnekt::ActionEvent &ev) {
+		if (ev.getActionNotify()->code == ACTN_ACTION) {
+			UIActionCfgSetValue(sUIAction(CFG::group, CFG::servers), GG::defaultServers);
+		}
+	}
+
+	void Controller::handleCreateGGAccount(Konnekt::ActionEvent &ev) {
+		if (ev.getActionNotify()->code == ACTN_ACTION) {
+			CloseHandle((HANDLE)Ctrl->BeginThread("CreateGGAccount", 0, 0, createGGAccount, 0, 0, 0));
+		}
+	}
+
+	void Controller::handleRemoveGGAccount(Konnekt::ActionEvent &ev) {
+		if (ev.getActionNotify()->code == ACTN_ACTION) {
+			CloseHandle((HANDLE)Ctrl->BeginThread("RemoveGGAccount", 0, 0, removeGGAccount, 0, 0, 0));
+		}
+	}
+	
+	void Controller::handleChangePassword(Konnekt::ActionEvent &ev) {
+		if (ev.getActionNotify()->code == ACTN_ACTION) {
+			CloseHandle((HANDLE)Ctrl->BeginThread("ChangePassword", 0, 0, changePassword, 0, 0, 0));
+		}
+	}
+
+
+	void Controller::handleRemindPassword(Konnekt::ActionEvent &ev) {
+		if (ev.getActionNotify()->code == ACTN_ACTION) {
+			CloseHandle((HANDLE)Ctrl->BeginThread("RemindPassword", 0, 0, remindPassword, 0, 0, 0));
+		}
+	}
+
+	
+	void Controller::setProxy() {
+		static char host[100];
+		static char login[100];
+		static char password[100];
+
+		gg_proxy_http_only = GETINT(CFG_PROXY_HTTP_ONLY);
+		gg_proxy_enabled = GETINT(CFG_PROXY);
+
+		if (gg_proxy_enabled) {
+			gg_proxy_host = strcpy(host, GETSTR(CFG_PROXY_HOST));
+			gg_proxy_port = GETINT(CFG_PROXY_PORT);
+			if (GETINT(CFG_PROXY_AUTH)) {
+				gg_proxy_username = strcpy(login, (char*)GETSTR(CFG_PROXY_LOGIN));
+				gg_proxy_password = strcpy(password, (char*)GETSTR(CFG_PROXY_PASS));
+			} else {
+				gg_proxy_username = 0;
+				gg_proxy_password = 0;
+			}
+		} else {
+			gg_proxy_host = 0;
+			gg_proxy_port = 0;
+		}
 	}
 }

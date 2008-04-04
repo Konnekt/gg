@@ -3,15 +3,14 @@
 #define TIMER_INTERVAL 15 * 1000
 #define PING_INTERVAL 120 * 1000
 #define MSG_TIMEOUT 20
-#define TIMEOUT GETINT(CFG_TIMEOUT) //30000
-#define HTTP_TIMEOUT TIMEOUT
-#define PUBDIR_TIMEOUT TIMEOUT * 2
 
 namespace GG {
 	//TODO: Net w jakiœ sposób bêdzie dynamiczny.
 	const unsigned net = 10; // wartoœæ NET
 	const int sig = (int)"GG"; //sygnatura
 	const int name = (int)"Gadu-Gadu"; //nazwa
+	
+	const char defaultServers[] = "s1.gadu-gadu.pl\r\n\r\n217.17.41.83\r\n217.17.41.84\r\n217.17.41.85\r\n217.17.41.86\r\n217.17.41.87\r\n217.17.41.88\r\n217.17.41.92";
 
 	namespace CFG {
 		const unsigned group = net * 1000;
@@ -23,9 +22,8 @@ namespace GG {
 		const unsigned friendsOnly = group + 6;
 		const unsigned servers = group + 7;
 		const unsigned choosenServer = group + 8;
-		const unsigned trayMenu = group + 9;
-		const unsigned useSSL = group + 10;
-		const unsigned resumeDisconnected = group + 11;
+		const unsigned useSSL = group + 9;
+		const unsigned resumeDisconnected = group + 10;
 		
 		/* TODO: Stare id kolumn; zapewne przydadz¹ siê przy pisaniu f-cji updatuj¹cej plugin.
 		const unsigned login = 1053;
@@ -42,6 +40,12 @@ namespace GG {
 	};
 	
 	namespace ACT {
+		const unsigned setDefaultServers = net * 1000 + 200;
+		const unsigned createGGAccount = net * 1000 + 201;
+		const unsigned removeGGAccount = net * 1000 + 202;
+		const unsigned changePassword = net * 1000 + 203;
+		const unsigned remindPassword = net * 1000 + 204;
+		const unsigned importCntList = net * 1000 + 205;
 	};
 	
 	namespace ICO {
@@ -71,7 +75,6 @@ namespace GG {
 	int disconnect();
 
 	// conn_tools
-	void setProxy();
 	void setStatus(int status, int setdesc = 1, gg_login_params * lp=0);
 	void setStatusDesc();
 	void chooseServer();
@@ -79,12 +82,6 @@ namespace GG {
 	bool __stdcall cancelDialogCB(sDIALOG_long*sd);
 	bool __stdcall timeoutDialogCB(int type, sDIALOG_long*sd);
 	bool __stdcall timeoutDialogSimpleCB(int type, sDIALOG_long*sd);
-
-	// actions
-	unsigned int __stdcall dlgAccount (LPVOID lParam);
-	unsigned int __stdcall dlgRemoveAccount (LPVOID lParam);
-	unsigned int __stdcall dlgNewPass(LPVOID lParam);
-	unsigned int __stdcall dlgRemindPass(LPVOID lParam);
 
 	// pubdir
 	void onPubdirSearchReply(gg_event *e);

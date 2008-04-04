@@ -98,6 +98,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="copy &quot;$(TargetDir)$(TargetFileName)&quot; &quot;D:\Program Files\KonnektD\plugins&quot;"
 			/>
 		</Configuration>
 		<Configuration
@@ -181,6 +182,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="cd $(TargetDir)&#x0D;&#x0A;copy &quot;$(TargetFileName)&quot; &quot;D:\Program Files\KonnektD\plugins&quot;&#x0D;&#x0A;zip -0q $(TargetName) $(TargetFileName)&#x0D;&#x0A;cd %temp%&#x0D;&#x0A;mkdir plugins&#x0D;&#x0A;copy &quot;$(TargetDir)$(TargetFileName)&quot; &quot;plugins&quot;&#x0D;&#x0A;tar czf &quot;$(TargetName).tgz&quot; &quot;plugins&quot;&#x0D;&#x0A;copy $(TargetName).tgz &quot;$(TargetDir)&quot;&#x0D;&#x0A;rmdir /S /Q plugins&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -192,6 +194,10 @@
 			>
 			<File
 				RelativePath="..\Controller.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Dialogs.h"
 				>
 			</File>
 			<File
@@ -273,22 +279,6 @@
 			<File
 				RelativePath="..\Dialogs.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\GG.cpp"

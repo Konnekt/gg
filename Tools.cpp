@@ -75,37 +75,6 @@ int GG::userType(int id) {
 	return (cntStatus & ST_IGNORED) ? GG_USER_BLOCKED : (cntStatus & ST_HIDEMYSTATUS) ? GG_USER_OFFLINE : GG_USER_NORMAL;
 }
 
-bool GG::getToken(const string & title, const string & info, string & tokenid, string & tokenval) {
-	gg_http * http = gg_token(0);
-	if (!http) {
-		ICMessage(IMI_ERROR, (int)"Wyst¹pi³ b³¹d podczas pobierania tokenu. SprawdŸ po³¹czenie i spróbuj ponownie.");
-		return false;
-	}
-	struct gg_token* token = (struct gg_token*)http->data;
-	tokenid = token->tokenid;
-	ICMessage(IMC_RESTORECURDIR);
-	char filename[MAX_PATH];
-	sprintf(filename, (string((char*)ICMessage(IMC_TEMPDIR)) + "gg_token%08x.gif").c_str(), rand());
-	FILE* f = fopen(filename, "wb");
-	if (!f || !fwrite(http->body, http->body_size, 1, f)) {
-		IMDEBUG(DBG_ERROR, "! Could not create/write temp file for token fn=%s size=%d", filename, http->body_size);
-		if (f)
-			fclose(f);
-		return false;
-	}
-	fclose(f);
-	sDIALOG_token dt;
-	dt.title = title.c_str();
-	dt.info = info.c_str();
-	string URL = "file://";
-	URL += filename;
-	dt.imageURL = URL.c_str();
-	ICMessage(IMI_DLGTOKEN, (int)&dt);
-	tokenval = dt.token;
-	gg_token_free(http);
-	return !tokenval.empty();
-}
-
 CStdString GG::msgToHtml(CStdString msg, void * formats, int formats_length) {
 	/* Zamiast znaczników wstawia:
 	 < - 1

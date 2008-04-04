@@ -1,336 +1,410 @@
-#include "stdafx.h"
-#include "GG.h"
+#include "StdAfx.h"
 #include "Controller.h"
 
 #define MAX_STRING 10000
 
-unsigned int __stdcall GG::dlgAccount (LPVOID lParam) {
-	if (IMessage(IMI_CONFIRM, 0, 0, (int)"Zostanie za³o¿one nowe konto w sieci Gadu-Gadu™.\nKontynuowaæ?", MB_TASKMODAL|MB_YESNO) == IDNO) 
-		return 0;
+namespace GG {
+	bool __stdcall GG::disconnectDialogCB(sDIALOG_long*sd) {
+		IMLOG("Aktualny Socket w GG - %x @ %x", gg_thread_socket(sd->threadId, 0), sd->threadId);
+		if (gg_thread_socket(sd->threadId, 0)) {
+			shutdown(gg_thread_socket(sd->threadId, 0), -1);
+			if (!gg_thread_socket(sd->threadId, -1))
+				IMLOG("closesocket.Error WSA = %d", WSAGetLastError());
+		}
+		return true;
+	}
 
-	sDIALOG_access sda;
-	sda.save = 1;
-	sda.title = "GG - nowe konto [krok 1/3]";
-	sda.info = "Podaj has³o do nowego konta.";
-	if (!IMessage(IMI_DLGSETPASS, 0, 0, (int)&sda, 1) || !*sda.pass)
-		return 0;
-	string pass = sda.pass;
-	bool save = sda.save;
+	bool __stdcall GG::timeoutDialogCB(int type, sDIALOG_long*sd) {
+		switch (type) {
+			case TIMEOUTT_START: break;
+			case TIMEOUTT_END: {
+				/*if (sd->timeoutParam) {
+					delete (timeoutDialogParam*)sd->timeoutParam;
+				}
+				sd->timeoutParam=0; 
+				ioctlsocket(gg_thread_socket(sd->threadId, 0), FIONBIO, 0);*/
+				break;
+			} case TIMEOUTT_TIMEOUT: {
+				disconnectDialogCB(sd);
+				ICMessage((sd->flag & DLONG_NODLG) ? IMC_LOG : IMI_ERROR, (int)"Up³yn¹³ limit czasu po³¹czenia.", 0);
+				return true;
+			} case TIMEOUTT_CHECK: {
+				/*gg_thread_socket_lock();
+				gg_thread* info = gg_thread_find(sd->threadId, 0, 0);
+				if (!info) {
+					gg_thread_socket_unlock();
+					return 0;
+				}
+				int r = WSAWaitForMultipleEvents(1, &info->event, 0, 0, 0);
 
-	sDIALOG_enter sde;
-	sde.title = "GG - nowe konto [krok 2/3]";
-	sde.info = "Podaj swój adres email, na który bêdzie mo¿na kiedyœ przes³aæ has³o.";
-	if (!IMessage(IMI_DLGENTER, 0, 0, (int)&sde) || !*sde.value)
-		return 0;
-	string email = sde.value;
+				gg_thread_socket_unlock();
+				return r == WSA_WAIT_TIMEOUT;*/
+			}
+			return 0; /*TODO: Wymyœleæ coœ na timeout!*/
+		}
+		return true;
+	}
 
-	string tokenid;
-	string tokenval;
-	if (!GG::getToken("GG - nowe konto [krok 3/3]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.", tokenid, tokenval))
-		return 0;
+	bool getToken(const string& title, const string& info, string& tokenID, string& tokenVal) {
+		gg_http* http = gg_token(0);
+		if (!http) {
+			ICMessage(IMI_ERROR, (int)"Wyst¹pi³ b³¹d podczas pobierania tokena. SprawdŸ po³¹czenie i spróbuj ponownie.");
+			return false;
+		}
+		struct gg_token* token = (struct gg_token*)http->data;
+		tokenID = token->tokenid;
 
-	sDIALOG_long sdl;
-	sdl.title = "GG - zak³adanie konta";
-	sdl.info = "Komunikujê siê z serwerem…";
-	sdl.flag = DLONG_MODAL | DLONG_AINET | DLONG_CANCEL;
-	sdl.cancelProc = disconnectDialogCB;
-	sdl.timeoutProc = timeoutDialogCB;
-	sdl.timeout = HTTP_TIMEOUT;
-	ICMessage(IMI_LONGSTART, (int)&sdl);
+		ICMessage(IMC_RESTORECURDIR);
+		string filename = (string)(char*)ICMessage(IMC_TEMPDIR) + "\\gg_token.gif";
+		FILE* tokenFile = fopen(filename.c_str(), "wb");
+		if (!tokenFile || !fwrite(http->body, http->body_size, 1, tokenFile)) {
+			IMDEBUG(DBG_ERROR, "! Could not create/write temp file for token fn=%s size=%d", filename.c_str(), http->body_size);
+			if (tokenFile)
+				fclose(tokenFile);
+			return false;
+		}
+		fclose(tokenFile);
 
-	GG::setProxy();
-	gg_http * gghttp;
-	if (!(gghttp = gg_register3(email.c_str(), pass.c_str() ,tokenid.c_str(), tokenval.c_str(), 0)) || gghttp->state != GG_STATE_DONE) {
+		sDIALOG_token dt;
+		dt.title = title.c_str();
+		dt.info = info.c_str();
+		string URL = "file://" + filename;
+		dt.imageURL = URL.c_str();
+		ICMessage(IMI_DLGTOKEN, (int)&dt);
+		tokenVal = dt.token;
+		gg_token_free(http);
+		return !tokenVal.empty();
+	}
+
+	unsigned int __stdcall createGGAccount(LPVOID lParam) {
+		if (ICMessage(IMI_CONFIRM, (int)"Zostanie za³o¿one nowe konto w sieci Gadu-Gadu™.\nKontynuowaæ?", MB_TASKMODAL | MB_YESNO) == IDNO) 
+			return 0;
+
+		sDIALOG_access sda;
+		sda.save = 1;
+		sda.title = "GG - nowe konto [krok 1/3]";
+		sda.info = "Podaj has³o do nowego konta.";
+		if (!ICMessage(IMI_DLGSETPASS, (int)&sda, 1) || !*sda.pass)
+			return 0;
+		string password = sda.pass;
+		bool save = sda.save;
+
+		sDIALOG_enter sde;
+		sde.title = "GG - nowe konto [krok 2/3]";
+		sde.info = "Podaj swój adres email, na który bêdzie mo¿na kiedyœ przes³aæ has³o.";
+		if (!IMessage(IMI_DLGENTER, Net::core, imtCore, (int)&sde) || !*sde.value)
+			return 0;
+		string email = sde.value;
+
+		string tokenID;
+		string tokenVal;
+		if (!getToken("GG - nowe konto [krok 3/3]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.", tokenID, tokenVal))
+			return 0;
+
+		sDIALOG_long sdl;
+		sdl.title = "GG - zak³adanie konta";
+		sdl.info = "Komunikujê siê z serwerem…";
+		sdl.flag = DLONG_MODAL | DLONG_AINET | DLONG_CANCEL;
+		sdl.cancelProc = disconnectDialogCB;
+		sdl.timeoutProc = timeoutDialogCB;
+		sdl.timeout = GETINT(CFG_TIMEOUT);
+		ICMessage(IMI_LONGSTART, (int)&sdl);
+
+		Controller::getInstance()->setProxy();
+		gg_http* gghttp = gg_register3(email.c_str(), password.c_str(), tokenID.c_str(), tokenVal.c_str(), 0);
+		if (!gghttp || gghttp->state != GG_STATE_DONE) {
+			ICMessage(IMI_LONGEND, (int)&sdl);
+			ICMessage(IMI_ERROR, (int)stringf("Wyst¹pi³ b³¹d podczas zak³adania konta. SprawdŸ po³¹czenie i spróbuj ponownie.").c_str(), 0);
+			return 0;
+		}
 		ICMessage(IMI_LONGEND, (int)&sdl);
-		IMessage(IMI_ERROR, 0, 0, (int)stringf("Wyst¹pi³ b³¹d podczas zak³adania konta. SprawdŸ po³¹czenie i spróbuj ponownie.").c_str(),0);
+
+		gg_pubdir* pd = (gg_pubdir*)gghttp->data;
+		if (pd->success) {
+			UIActionCfgSetValue(sUIAction(CFG::group, CFG::login), inttostr(pd->uin).c_str());
+			SETINT(CFG::login, pd->uin);
+			UIActionCfgSetValue(sUIAction(CFG::group, CFG::password), save ? password.c_str() : "");
+			SETSTR(CFG::password, save ? password.c_str() : "");
+			ICMessage(IMC_SAVE_CFG);
+		}
+
+		ICMessage(IMI_INFORM,
+			pd->success ?
+			(int)stringf("Konto zosta³o za³o¿one!\nTwój numer UID to %d", pd->uin).c_str()
+			:
+			(int)stringf("Wyst¹pi³ b³¹d podczas zak³adania konta. SprawdŸ po³¹czenie i spróbuj ponownie.").c_str()
+		);
+		gg_register_free(gghttp);
 		return 0;
 	}
-	ICMessage(IMI_LONGEND, (int)&sdl);
 
-	gg_pubdir * pd = (gg_pubdir*)gghttp->data;
-	if (pd->success) {
-		UIActionCfgSetValue(sUIAction(IMIG_GGCFG_USER, IMIB_CFG | CFG_GG_PASS), save?pass.c_str():"");
-		UIActionCfgSetValue(sUIAction(IMIG_GGCFG_USER, IMIB_CFG | CFG_GG_LOGIN), inttostr(pd->uin).c_str());
-		SETSTR(CFG_GG_PASS, save?pass.c_str():"");
-		SETINT(CFG_GG_LOGIN, pd->uin);
-		ICMessage(IMC_SAVE_CFG);
-		IMessageDirect(IM_CNT_UPLOAD);
-	}
+	unsigned int __stdcall removeGGAccount (LPVOID lParam) {
+		if (ICMessage(IMI_CONFIRM, (int)"Twoje konto na gadu-gadu zostanie usuniête!\nKontynuowaæ?", MB_TASKMODAL | MB_YESNO) == IDNO) 
+			return 0;
 
-	IMessage(IMI_INFORM, 0, 0,
-		pd->success?
-		(int)stringf("Konto zosta³o za³o¿one!\nTwój numerek to %d", pd->uin).c_str()
-		:
-		(int)stringf("Wyst¹pi³ b³¹d podczas zak³adania konta. SprawdŸ po³¹czenie i spróbuj ponownie.").c_str()
-	);
-	gg_register_free(gghttp);
-	return 0;
-}
+		sDIALOG_enter sde;
+		sde.title = "GG - usuwanie konta [krok 1/3]";
+		sde.info = "PotwierdŸ numer konta";
+		if (!ICMessage(IMI_DLGENTER, (int)&sde, 1))
+			return 0;
+		string login = sde.value;
 
-unsigned int __stdcall GG::dlgRemoveAccount (LPVOID lParam) {
-	if (IMessage(IMI_CONFIRM, 0, 0, (int)"Twoje konto na gadu-gadu zostanie usuniête!\nKontynuowaæ?", MB_TASKMODAL|MB_YESNO) == IDNO) 
-		return 0;
+		sDIALOG_access sda;
+		sda.title = "GG - usuwanie konta [krok 2/3]";
+		sda.info = "Podaj has³o do konta";
+		if (!ICMessage(IMI_DLGPASS, (int)&sda))
+			return 0;
+		string password = sda.pass;
 
-	sDIALOG_enter sde;
-	sde.title = "GG - usuwanie konta [krok 1/3]";
-	sde.info = "PotwierdŸ numer konta";
-	if (!IMessage(IMI_DLGENTER, 0, 0, (int)&sde, 1))
-		return 0;
-	string uin = sde.value;
+		string tokenID;
+		string tokenVal;
+		if (!getToken("GG - usuwanie konta [krok 3/3]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.", tokenID, tokenVal))
+			return 0;
 
-	sDIALOG_access sda;
-	sda.title = "GG - usuwanie konta [krok 2/3]";
-	sda.info = "Podaj has³o do konta";
-	if (!IMessage(IMI_DLGPASS, 0, 0, (int)&sda))
-		return 0;
-	string pass = sda.pass;
+		sDIALOG_long sdl;
+		sdl.title = "GG - usuwanie konta";
+		sdl.info = "Komunikujê siê z serwerem…";
+		sdl.flag = DLONG_MODAL | DLONG_AINET | DLONG_CANCEL;
+		sdl.cancelProc = disconnectDialogCB;
+		sdl.timeoutProc = timeoutDialogCB;
+		sdl.timeout = GETINT(CFG_TIMEOUT);
+		ICMessage(IMI_LONGSTART, (int)&sdl);
 
-	string tokenid;
-	string tokenval;
-	if (!GG::getToken("GG - usuwanie konta [krok 3/3]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.", tokenid, tokenval))
-		return 0;
-
-	sDIALOG_long sdl;
-	sdl.title = "GG - usuwanie konta";
-	sdl.info = "Komunikujê siê z serwerem…";
-	sdl.flag = DLONG_MODAL | DLONG_AINET | DLONG_CANCEL;
-	sdl.cancelProc = disconnectDialogCB;
-	sdl.timeoutProc = timeoutDialogCB;
-	sdl.timeout = HTTP_TIMEOUT;
-	ICMessage(IMI_LONGSTART, (int)&sdl);
-	GG::setProxy();
-	gg_http* gghttp;
-	if (!(gghttp = gg_unregister3(atoi(uin.c_str()), pass.c_str() ,tokenid.c_str(), tokenval.c_str(), 0))) {
+		Controller::getInstance()->setProxy();
+		gg_http* gghttp = gg_unregister3(atoi(login.c_str()), password.c_str(), tokenID.c_str(), tokenVal.c_str(), 0);
+		if (!gghttp) {
+			ICMessage(IMI_LONGEND, (int)&sdl);
+			ICMessage(IMI_ERROR, (int)stringf("Wyst¹pi³ b³¹d podczas usuwania konta. SprawdŸ po³¹czenie i spróbuj ponownie.").c_str(), 0);
+			return 0;
+		}
 		ICMessage(IMI_LONGEND, (int)&sdl);
-		IMessage(IMI_ERROR, 0, 0, (int)stringf("Wyst¹pi³ b³¹d podczas usuwania konta. SprawdŸ po³¹czenie i spróbuj ponownie.").c_str(), 0);
+
+		gg_pubdir* pd = (gg_pubdir*)gghttp->data;
+		if (pd->success) {
+			UIActionCfgSetValue(sUIAction(CFG::group, CFG::login), "");
+			SETSTR(CFG::login, "");
+			UIActionCfgSetValue(sUIAction(CFG::group, CFG::password), "");
+			SETSTR(CFG::password, "");
+		}
+
+		ICMessage(IMI_INFORM,
+			pd->success ?
+			(int)"Konto zosta³o usuniête…"
+			:
+			(int)"Wyst¹pi³ b³¹d podczas usuwania konta. SprawdŸ po³¹czenie i spróbuj ponownie."
+		);
+		gg_unregister_free(gghttp);
 		return 0;
 	}
 
-	ICMessage(IMI_LONGEND, (int)&sdl);
-	gg_pubdir * pd = (gg_pubdir*)gghttp->data;
-	if (pd->success) {
-		UIActionCfgSetValue(sUIAction(IMIG_GGCFG_USER, IMIB_CFG | CFG_GG_PASS), "");
-		UIActionCfgSetValue(sUIAction(IMIG_GGCFG_USER, IMIB_CFG | CFG_GG_LOGIN), "");
-	}
+	unsigned int __stdcall changePassword(LPVOID lParam) {
+		if (ICMessage(IMI_CONFIRM, (int)"Czy na pewno chcesz zmieniæ has³o?", MB_TASKMODAL | MB_YESNO) == IDNO)
+			return 0;
 
-	IMessage(IMI_INFORM, 0, 0 ,
-		pd->success?
-		(int)"Konto zosta³o usuniête…"
-		:
-		(int)"Wyst¹pi³ b³¹d podczas usuwania konta. SprawdŸ po³¹czenie i spróbuj ponownie."
-	);
-	gg_unregister_free(gghttp);
-	return 0;
-}
+		sDIALOG_access sda;
+		string oldPassword;
+		sda.save = 0;
+		sda.flag = 0;
+		sda.title = "GG - zmiana has³a [1/4]";
+		sda.info = "Podaj aktualne has³o.";
+		if (!ICMessage(IMI_DLGPASS, (int)&sda, 0))
+			return 0;
+		oldPassword = sda.pass;
 
-unsigned int __stdcall GG::dlgNewPass(LPVOID lParam) {
-	if (!GG::check(1, 0, 1, 1) || IMessage(IMI_CONFIRM, 0, 0, (int)"Czy na pewno chcesz zmieniæ has³o?", MB_TASKMODAL|MB_YESNO) == IDNO)
-		return 0;
+		sda.pass = "";
+		sda.save = 1;
+		sda.flag = DFLAG_SAVE;
+		sda.title = "GG - zmiana has³a [2/4]";
+		sda.info = "Podaj nowe has³o do twojego konta.";
+		if (!ICMessage(IMI_DLGSETPASS, (int)&sda, 1)) 
+			return 0;
+		string password = sda.pass;
+		bool save = sda.save;
 
-	sDIALOG_access sda;
-	CStdString oldPass;
-	sda.save = 0;
-	sda.flag = 0;
-	sda.title = "GG - zmiana has³a [1/4]";
-	sda.info = "Podaj aktualne has³o.";
-	if (!IMessage(IMI_DLGPASS, 0, 0, (int)&sda, 0))
-		return 0;
-	oldPass = sda.pass;
+		sDIALOG_enter sde;
+		sde.title = "GG - zmiana has³a [3/4]";
+		sde.info = "Podaj swój adres email, na który bêdzie mo¿na kiedyœ przes³aæ has³o.";
+		if (!ICMessage(IMI_DLGENTER, (int)&sde)) return 0;
+		string email = sde.value;
 
-	sda.pass = "";
-	sda.save = 1;
-	sda.flag = DFLAG_SAVE;
-	sda.title = "GG - zmiana has³a [2/4]";
-	sda.info = "Podaj nowe has³o do twojego konta.";
-	if (!IMessage(IMI_DLGSETPASS, 0, 0, (int)&sda, 1)) 
-		return 0;
-	string pass = sda.pass;
-	bool save = sda.save;
+		string tokenID;
+		string tokenVal;
+		if (!GG::getToken("GG - zmiana has³a [krok 4/4]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.", tokenID, tokenVal))
+			return 0;
 
-	sDIALOG_enter sde;
-	sde.title = "GG - zmiana has³a [3/4]";
-	sde.info = "Podaj swój adres email, na który bêdzie mo¿na kiedyœ przes³aæ has³o.";
-	if (!IMessage(IMI_DLGENTER, 0, 0, (int)&sde)) return 0;
-	string email = sde.value;
+		sDIALOG_long sdl;
+		sdl.title = "GG - zmiana has³a";
+		sdl.info = "Komunikujê siê z serwerem…";
+		sdl.flag = DLONG_MODAL | DLONG_AINET | DLONG_CANCEL;
+		sdl.cancelProc = disconnectDialogCB;
+		sdl.timeoutProc = timeoutDialogCB;
+		sdl.timeout = GETINT(CFG_TIMEOUT);
+		ICMessage(IMI_LONGSTART, (int)&sdl);
 
-	string tokenid;
-	string tokenval;
-	if (!GG::getToken("GG - zmiana has³a [krok 4/4]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.", tokenid, tokenval))
-		return 0;
-
-	sDIALOG_long sdl;
-	sdl.title = "GG - zmiana has³a";
-	sdl.info = "Komunikujê siê z serwerem…";
-	sdl.flag = DLONG_MODAL|DLONG_AINET|DLONG_CANCEL;
-	sdl.cancelProc = disconnectDialogCB;
-	sdl.timeoutProc = timeoutDialogCB;
-	sdl.timeout = HTTP_TIMEOUT;
-	ICMessage(IMI_LONGSTART, (int)&sdl);
-	GG::setProxy();
-	gg_http * gghttp;
-	int ggLogin;
-	CStdString ggPass;
-	getAccount(ggLogin, ggPass);
-	if (!(gghttp = gg_change_passwd4(ggLogin, email.c_str(), oldPass.c_str(), pass.c_str(), tokenid.c_str(), tokenval.c_str(), 0))) {
+		Controller::getInstance()->setProxy();
+		int login = GETINT(CFG::login);
+		gg_http* gghttp = gghttp = gg_change_passwd4(login, email.c_str(), oldPassword.c_str(), password.c_str(), tokenID.c_str(), tokenVal.c_str(), 0);
+		if (!gghttp) {
+			ICMessage(IMI_LONGEND, (int)&sdl);
+			ICMessage(IMI_ERROR, (int)stringf("Wyst¹pi³ b³¹d. SprawdŸ po³¹czenie, oraz czy poda³eœ prawid³owy numer konta i has³o. Nastêpnie spróbuj ponownie.").c_str(),MB_TASKMODAL|MB_OK);
+			return 0;
+		}
 		ICMessage(IMI_LONGEND, (int)&sdl);
-		IMessage(IMI_ERROR, 0, 0, (int)stringf("Wyst¹pi³ b³¹d. SprawdŸ po³¹czenie, oraz czy poda³eœ prawid³owy numer konta i has³o. Nastêpnie spróbuj ponownie.").c_str(),MB_TASKMODAL|MB_OK);
+
+		gg_pubdir* pd = (gg_pubdir*)gghttp->data;
+		if (pd->success) {
+			UIActionCfgSetValue(sUIAction(CFG::group, CFG::password), save ? password.c_str():"");
+			SETSTR(CFG::password, save ? password.c_str() : "");
+		}
+
+		ICMessage(IMI_INFORM,
+			pd->success ?
+			(int)stringf("Has³o dla konta %d zosta³o zmienione!", login).c_str()
+			:
+			(int)stringf("Wyst¹pi³ b³¹d podczas zmiany has³a dla konta %d . SprawdŸ po³¹czenie, oraz czy poda³eœ prawid³owy numer konta i has³o i spróbuj ponownie.", login).c_str()
+		);
+		gg_free_change_passwd(gghttp);
 		return 0;
 	}
 
-	ICMessage(IMI_LONGEND, (int)&sdl);
-	gg_pubdir* pd = (gg_pubdir*)gghttp->data;
-	if (pd->success) {
-		UIActionCfgSetValue(sUIAction(IMIG_GGCFG_USER, IMIB_CFG | CFG_GG_PASS), save?pass.c_str():"");
-		SETSTR(CFG_GG_PASS, save?pass.c_str():"");
-	}
+	unsigned int __stdcall remindPassword(LPVOID lParam) {
+		sDIALOG_enter sde;
+		sde.title = "GG - przypomnienie has³a [1/2]";
+		sde.info = "Podaj adres email, który wpisa³eœ podczas zak³adania konta. Na ten email otrzymasz has³o.";
+		if (!ICMessage(IMI_DLGENTER, (int)&sde))
+			return 0;
+		string email = sde.value;
 
-	IMessage(IMI_INFORM, 0, 0 ,
-		pd->success?
-		(int)stringf("Has³o dla konta %d zosta³o zmienione!", ggLogin).c_str()
-		:
-		(int)stringf("Wyst¹pi³ b³¹d podczas zmiany has³a dla konta %d . SprawdŸ po³¹czenie, oraz czy poda³eœ prawid³owy numer konta i has³o i spróbuj ponownie", ggLogin).c_str()
-	);
-	gg_free_change_passwd(gghttp);
-	return 0;
-}
+		string tokenID;
+		string tokenVal;
+		if (!GG::getToken("GG - przypomnienie has³a [2/2]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.", tokenID, tokenVal))
+			return 0;
 
-unsigned int __stdcall GG::dlgRemindPass(LPVOID lParam) {
-	if (!GG::check(1, 0, 1, 1)) return 0;
+		sDIALOG_long sdl;
+		sdl.title = "GG - przypomnienie has³a";
+		sdl.info = "Komunikujê siê z serwerem…";
+		sdl.flag = DLONG_AINET | DLONG_CANCEL;
+		sdl.cancelProc = disconnectDialogCB;
+		sdl.timeoutProc = timeoutDialogCB;
+		sdl.timeout = GETINT(CFG_TIMEOUT);
+		ICMessage(IMI_LONGSTART, (int)&sdl);
 
-	sDIALOG_enter sde;
-	sde.title = "GG - przypomnienie has³a [1/2]";
-	sde.info = "Podaj adres email, który wpisa³eœ podczas zak³adania konta. Na ten email otrzymasz has³o.";
-	if (!IMessage(IMI_DLGENTER, 0, 0, (int)&sde)) return 0;
-	string email = sde.value;
-
-	string tokenid;
-	string tokenval;
-	if (!GG::getToken("GG - przypomnienie has³a [2/2]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.", tokenid, tokenval))
-		return 0;
-
-	sDIALOG_long sdl;
-	sdl.title = "GG - przypomnienie has³a";
-	sdl.info = "Komunikujê siê z serwerem…";
-	sdl.flag = DLONG_AINET | DLONG_CANCEL;
-	sdl.cancelProc = disconnectDialogCB;
-	sdl.timeoutProc = timeoutDialogCB;
-	sdl.timeout = HTTP_TIMEOUT;
-	ICMessage(IMI_LONGSTART, (int)&sdl);
-	GG::setProxy();
-	gg_http * gghttp;
-	if (!(gghttp = gg_remind_passwd3(GETINT(CFG_GG_LOGIN), email.c_str(), tokenid.c_str(), tokenval.c_str(), 0))) {
+		Controller::getInstance()->setProxy();
+		gg_http* gghttp = gg_remind_passwd3(GETINT(CFG::login), email.c_str(), tokenID.c_str(), tokenVal.c_str(), 0);
+		if (!gghttp) {
+			ICMessage(IMI_LONGEND, (int)&sdl);
+			ICMessage(IMI_ERROR, (int)"Wyst¹pi³ b³¹d! SprawdŸ po³¹czenie, oraz czy poda³eœ prawid³owy numer konta/adres email i spróbuj ponownie.", MB_TASKMODAL | MB_OK);
+			return 0;
+		}
 		ICMessage(IMI_LONGEND, (int)&sdl);
-		IMessage(IMI_ERROR, 0, 0, (int)stringf("Wyst¹pi³ b³¹d! SprawdŸ po³¹czenie, oraz czy poda³eœ prawid³owy numer konta/adres email i spróbuj ponownie").c_str(),MB_TASKMODAL|MB_OK);
+
+		gg_pubdir* pd = (gg_pubdir*)gghttp->data;
+
+		ICMessage(IMI_INFORM,
+			pd->success ?
+			(int)"Has³o zosta³o wys³ane!"
+			:
+			(int)"Wyst¹pi³ b³¹d! SprawdŸ po³¹czenie, oraz czy poda³eœ prawid³owy numer konta i spróbuj ponownie."
+		);
+		gg_remind_passwd_free(gghttp);
 		return 0;
 	}
 
-	ICMessage(IMI_LONGEND, (int)&sdl);
-	gg_pubdir* pd = (gg_pubdir*)gghttp->data;
+	/*void importList() {
+		sDIALOG_choose sd;
+		sd.title = "Import listy kontaktów";
+		sd.info = "Wybierz sk¹d importowaæ.\nZostan¹ dodane tylko brakuj¹ce kontakty.";
+		sd.flag = DFLAG_CANCEL;
+		sd.items = "Z pliku\nZ Serwera";
+		int r = ICMessage(IMI_DLGBUTTONS, (int)&sd);
+		IMLOG("- Import type %d", r);
 
-	IMessage(IMI_INFORM, 0, 0 ,
-		pd->success?
-		(int)"Has³o zosta³o wys³ane!"
-		:
-		(int)"Wyst¹pi³ b³¹d! SprawdŸ po³¹czenie, oraz czy poda³eœ prawid³owy numer konta i spróbuj ponownie"
-	);
-	gg_remind_passwd_free(gghttp);
-	return 0;
-}
+		switch (r) {
+			case 1: {
+				OPENFILENAME of;
+				memset(&of, 0, sizeof(of));
+				of.lStructSize = sizeof(of) - 12;
+				of.lpstrFilter = "Txt\0*.txt\0*.*\0*.*\0";
+				char* buff = new char [MAX_STRING];
+				strcpy(buff, "");
+				of.lpstrFile = buff;
+				of.nMaxFile = MAX_STRING;
+				of.Flags = OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
+				of.lpstrDefExt = "txt";
+				int f;
 
-void GG::dlgListImport() {
-	sDIALOG_choose sd;
-	sd.title = "Import listy kontaktów";
-	sd.info = "Wybierz sk¹d importowaæ.\nZostan¹ dodane tylko brakuj¹ce kontakty.";
-	sd.flag = DFLAG_CANCEL;
-	sd.items = "Z pliku\nZ Serwera";
-	int r = ICMessage(IMI_DLGBUTTONS, (int)&sd);
-	IMLOG("- Import type %d", r);
-
-	switch (r) {
-		case 1: {
-			OPENFILENAME of;
-			memset(&of, 0, sizeof(of));
-			of.lStructSize = sizeof(of) - 12;
-			of.lpstrFilter = "Txt\0*.txt\0*.*\0*.*\0";
-			char * buff = new char [MAX_STRING];
-			strcpy(buff, "");
-			of.lpstrFile = buff;
-			of.nMaxFile = MAX_STRING;
-			of.Flags = OFN_PATHMUSTEXIST|OFN_NOCHANGEDIR;
-			of.lpstrDefExt="txt";
-			int f;
-
-			if (GetOpenFileName(&of)) {
-				if ((f = open(of.lpstrFile, O_RDONLY|O_TEXT))) {
-					unsigned length = filelength(f);
-					char * fbuff = new char [length + 1];
-					length = read(f, fbuff, length);
-					if (length != -1) {
-						fbuff[length] = 0;
-						setUserList(fbuff);
-						ICMessage(IMI_REFRESH_LST);
+				if (GetOpenFileName(&of)) {
+					if ((f = open(of.lpstrFile, O_RDONLY | O_TEXT))) {
+						unsigned length = filelength(f);
+						char* fbuff = new char [length + 1];
+						length = read(f, fbuff, length);
+						if (length != -1) {
+							fbuff[length] = 0;
+							setUserList(fbuff);
+							ICMessage(IMI_REFRESH_LST);
+						} else {
+							IMDEBUG(DBG_ERROR, "Nie mogê czytaæ pliku!");
+						}
+						delete[] fbuff;
+						close(f);
+						ICMessage(IMI_INFORM, (int)"Kontakty zosta³y wczytane.");
 					} else {
-						IMDEBUG(DBG_ERROR, "Nie mogê czytaæ pliku!");
+						ICMessage(IMI_ERROR, (int)"Nie mog³em wczytaæ pliku!", MB_TASKMODAL|MB_OK);
 					}
-					delete[] fbuff;
-					close(f);
-					ICMessage(IMI_INFORM, (int)"Kontakty zosta³y wczytane.");
-				} else {
-					ICMessage(IMI_ERROR, (int)"Nie mog³em wczytaæ pliku!", MB_TASKMODAL|MB_OK);
 				}
+				delete[] buff;
+				break;
+			} case 2: {
+				CloseHandle((HANDLE)Ctrl->BeginThread("ListImport", 0, 0, doListImport, 0, 0, 0));
+				break;
 			}
-			delete[] buff;
-			break;
-		} case 2: {
-			CloseHandle((HANDLE)Ctrl->BeginThread("ListImport", 0, 0, doListImport, 0, 0, 0));
-			break;
 		}
+		ICMessage(IMC_SAVE_CNT);
 	}
-	ICMessage(IMC_SAVE_CNT);
-}
 
-void GG::dlgListExport() {
-	sDIALOG_choose sd;
-	sd.title = "Export listy kontaktów";
-	sd.info = "Wybierz dok¹d exportowaæ.";
-	sd.flag = DFLAG_CANCEL;
-	sd.items = "Do pliku\nNa Serwer GG\nUsuñ listê z serwera";
-	int r = ICMessage(IMI_DLGBUTTONS, (int)&sd);
-	IMLOG("- Export type %d", r);
+	void exportList() {
+		sDIALOG_choose sd;
+		sd.title = "Export listy kontaktów";
+		sd.info = "Wybierz dok¹d exportowaæ.";
+		sd.flag = DFLAG_CANCEL;
+		sd.items = "Do pliku\nNa Serwer GG\nUsuñ listê z serwera";
+		int r = ICMessage(IMI_DLGBUTTONS, (int)&sd);
+		IMLOG("- Export type %d", r);
 
-	switch (r) {
-		case 1: {
-			OPENFILENAME of;
-			memset(&of, 0, sizeof(of));
-			of.lStructSize = sizeof(of) - 12;
-			of.lpstrFilter = "Txt\0*.txt\0*.*\0*.*\0";
-			char * buff = new char[MAX_STRING];
-			strcpy(buff, "kontakty");
-			of.lpstrFile = buff;
-			of.nMaxFile = MAX_STRING;
-			of.nFilterIndex = 1;
-			of.Flags = OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
-			of.lpstrDefExt = "txt";
+		switch (r) {
+			case 1: {
+				OPENFILENAME of;
+				memset(&of, 0, sizeof(of));
+				of.lStructSize = sizeof(of) - 12;
+				of.lpstrFilter = "Txt\0*.txt\0*.*\0*.*\0";
+				char * buff = new char[MAX_STRING];
+				strcpy(buff, "kontakty");
+				of.lpstrFile = buff;
+				of.nMaxFile = MAX_STRING;
+				of.nFilterIndex = 1;
+				of.Flags = OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
+				of.lpstrDefExt = "txt";
 
-			FILE* f;
-			if (GetSaveFileName(&of)) {
-				if ((f = fopen(of.lpstrFile, "wb"))) {
-					string str=getUserList();
-					fwrite((char*)str.c_str(), str.size(), 1, f);
-					fclose(f);
-					ICMessage(IMI_INFORM, (int)"Kontakty zosta³y zapisane.");
-				} else {
-					ICMessage(IMI_ERROR, (int)"Nie mog³em zapisaæ do pliku!", MB_TASKMODAL|MB_OK);
+				FILE* f;
+				if (GetSaveFileName(&of)) {
+					if ((f = fopen(of.lpstrFile, "wb"))) {
+						string str=getUserList();
+						fwrite((char*)str.c_str(), str.size(), 1, f);
+						fclose(f);
+						ICMessage(IMI_INFORM, (int)"Kontakty zosta³y zapisane.");
+					} else {
+						ICMessage(IMI_ERROR, (int)"Nie mog³em zapisaæ do pliku!", MB_TASKMODAL|MB_OK);
+					}
 				}
+				delete [] buff;
+				break;
+			} case 2: {
+				CloseHandle((HANDLE)Ctrl->BeginThread("ListExport", 0, 0, doListExport, 0, 0, 0));
+				break;
+			} case 3: {
+				CloseHandle((HANDLE)Ctrl->BeginThread("ListExport", 0, 0, doListExport, (void*)1, 0, 0));
+				break;
 			}
-			delete [] buff;
-			break;
-		} case 2: {
-			CloseHandle((HANDLE)Ctrl->BeginThread("ListExport", 0, 0, doListExport, 0, 0, 0));
-			break;
-		} case 3: {
-			CloseHandle((HANDLE)Ctrl->BeginThread("ListExport", 0, 0, doListExport, (void*)1, 0, 0));
-			break;
 		}
-	}
+	}*/
 }

@@ -2,31 +2,6 @@
 #include "GG.h"
 #include "Controller.h"
 
-void GG::setProxy() {
-	static char p_host[100];
-	static char p_user[100];
-	static char p_pass[100];
-	gg_proxy_http_only = GETINT(CFG_PROXY_HTTP_ONLY);
-	gg_proxy_enabled = GETINT(CFG_PROXY);
-	if (gg_proxy_enabled) {
-		strcpy(p_host, GETSTR(CFG_PROXY_HOST));
-		gg_proxy_host = p_host;
-		gg_proxy_port = GETINT(CFG_PROXY_PORT);
-	} else {
-		gg_proxy_host = 0;
-		gg_proxy_port = 0;
-	}
-	if (gg_proxy_enabled && GETINT(CFG_PROXY_AUTH)) {
-		strcpy(p_user, (char*)GETSTR(CFG_PROXY_LOGIN));
-		gg_proxy_username = p_user;
-		strcpy(p_pass, (char*)GETSTR(CFG_PROXY_PASS));
-		gg_proxy_password = p_pass;
-	} else {
-		gg_proxy_username = 0;
-		gg_proxy_password = 0;
-	}
-}
-
 void GG::setStatus(int status, int setdesc, gg_login_params* lp) {
 	if (!lp && !ggThread) return;
 	if (status == -1) status = GETINT(CFG_GG_STATUS);
@@ -151,16 +126,6 @@ void GG::chooseServer() {
 	lastServer = servers.substr(pos[r - 1], servers.find('\n', pos[r - 1]) - pos[r - 1]);
 }
 
-bool __stdcall GG::disconnectDialogCB(sDIALOG_long*sd) {
-	IMLOG("* Aktualny Socket w GG - %x @ %x", gg_thread_socket(sd->threadId,0), sd->threadId);
-	if (gg_thread_socket(sd->threadId, 0)) {
-		shutdown(gg_thread_socket(sd->threadId, 0), 0xFFFFFFFF);
-		if (!gg_thread_socket(sd->threadId, -1))
-			IMLOG("! closesocket.Error WSA = %d", WSAGetLastError());
-	}
-	return true;
-}
-
 bool __stdcall GG::cancelDialogCB(sDIALOG_long* sd) {
 	sd->cancel = true;
 	return true;
@@ -192,38 +157,6 @@ bool __stdcall GG::timeoutDialogSimpleCB(int type, sDIALOG_long*sd) {
 			ICMessage((sd->flag & DLONG_NODLG)?IMC_LOG:IMI_ERROR, (int)"Niestety, serwer nie odpowiada.",0);
 			return true;
 		} case TIMEOUTT_CHECK: return true;
-	}
-	return true;
-}
-
-
-bool __stdcall GG::timeoutDialogCB(int type, sDIALOG_long*sd) {
-	switch (type) {
-		case TIMEOUTT_START: break;
-		case TIMEOUTT_END: {
-			/*if (sd->timeoutParam) {
-				delete (timeoutDialogParam*)sd->timeoutParam;
-			}
-			sd->timeoutParam=0; 
-			ioctlsocket(gg_thread_socket(sd->threadId, 0), FIONBIO, 0);*/
-			break;
-		} case TIMEOUTT_TIMEOUT: {
-			disconnectDialogCB(sd);
-			ICMessage((sd->flag & DLONG_NODLG) ? IMC_LOG : IMI_ERROR, (int)"Up³yn¹³ limit czasu po³¹czenia.", 0);
-			return true;
-		} case TIMEOUTT_CHECK: {
-			/*gg_thread_socket_lock();
-			gg_thread* info = gg_thread_find(sd->threadId, 0, 0);
-			if (!info) {
-				gg_thread_socket_unlock();
-				return 0;
-			}
-			int r = WSAWaitForMultipleEvents(1, &info->event, 0, 0, 0);
-
-			gg_thread_socket_unlock();
-			return r == WSA_WAIT_TIMEOUT;*/
-		}
-		return 0; /*TODO: Wymyœleæ coœ na timeout!*/
 	}
 	return true;
 }

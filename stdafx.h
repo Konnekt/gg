@@ -45,8 +45,8 @@
 #endif
 
 //Libgadu
-#include <libgadu\compat_w32.h>
-#include <libgadu\libgadu\include\libgadu.h>
+#include <libgadu/compat_w32.h>
+#include <libgadu/libgadu/include/libgadu.h>
 
 // nag³ówki boosta
 #include <boost/signal.hpp>
@@ -60,13 +60,15 @@
 #include <stamina/threadinvoke.h>
 */
 
-#include <stamina/helpers.h>
-#include <stamina/object.h>
-#include <stamina/objectimpl.h>
-#include <stamina/exception.h>
-#include <stamina/string.h>
-#include <stamina/time64.h>
-#include <stamina/timer.h>
+#include <stamina/Helpers.h>
+#include <stamina/Object.h>
+#include <stamina/ObjectImpl.h>
+#include <stamina/Exception.h>
+#include <stamina/String.h>
+#include <stamina/Time64.h>
+#include <stamina/Timer.h>
+#include <stamina/RegEx.h>
+#include <stamina/SimXML.h>
 
 using namespace Stamina;
 using namespace std;

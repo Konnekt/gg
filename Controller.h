@@ -2,11 +2,10 @@
 
 #include "GG.h"
 #include "Dialogs.h"
+#include "UserList.h"
 
 namespace GG {
-	class Controller : public iController<Controller> {
-	public:
-		friend class iController<Controller>;
+	class Controller : public iController {
 
 	public:
 		//typy

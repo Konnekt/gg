@@ -24,6 +24,7 @@
 
 // Windows Header Files:
 #include <windows.h>
+#include <Commdlg.h>
 #include <windowsx.h>
 #include <process.h>
 #include <commctrl.h>
@@ -84,6 +85,7 @@ using namespace std;
 #include <konnekt/lib.h>
 #include <konnekt/tabletka.h>
 #include <konnekt/plugsNET.h>
+#include <konnekt/core_contact.h>
 #include <konnekt/contrib/iController.h>
 
 using namespace Konnekt;

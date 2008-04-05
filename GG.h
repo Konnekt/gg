@@ -93,16 +93,6 @@ namespace GG {
 	// api_sessions
 	int event(GGER_enum type, void * data);
 	void waitOnSessions();
-	
-	// userlist
-	void dlgListImport();
-	void dlgListExport();
-	unsigned int __stdcall doListExport(LPVOID lParam);
-	unsigned int __stdcall doListImport(LPVOID lParam);
-	unsigned int __stdcall dlgListRefresh(LPVOID lParam);
-	void onUserlistReply(gg_event * e);
-	string getUserList ();
-	int setUserList(char * list);
 
 	// tools
 	int check(bool conn = 1, bool sess = 1, bool login = 1, bool warn = 1);

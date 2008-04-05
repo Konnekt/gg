@@ -110,7 +110,7 @@ namespace GG {
 		sdl.timeout = GETINT(CFG_TIMEOUT);
 		ICMessage(IMI_LONGSTART, (int)&sdl);
 
-		Controller::getInstance()->setProxy();
+		Singleton<Controller>::getInstance()->setProxy();
 		gg_http* gghttp = gg_register3(email.c_str(), password.c_str(), tokenID.c_str(), tokenVal.c_str(), 0);
 		if (!gghttp || gghttp->state != GG_STATE_DONE) {
 			ICMessage(IMI_LONGEND, (int)&sdl);
@@ -170,7 +170,7 @@ namespace GG {
 		sdl.timeout = GETINT(CFG_TIMEOUT);
 		ICMessage(IMI_LONGSTART, (int)&sdl);
 
-		Controller::getInstance()->setProxy();
+		Singleton<Controller>::getInstance()->setProxy();
 		gg_http* gghttp = gg_unregister3(atoi(login.c_str()), password.c_str(), tokenID.c_str(), tokenVal.c_str(), 0);
 		if (!gghttp) {
 			ICMessage(IMI_LONGEND, (int)&sdl);
@@ -241,7 +241,7 @@ namespace GG {
 		sdl.timeout = GETINT(CFG_TIMEOUT);
 		ICMessage(IMI_LONGSTART, (int)&sdl);
 
-		Controller::getInstance()->setProxy();
+		Singleton<Controller>::getInstance()->setProxy();
 		int login = GETINT(CFG::login);
 		gg_http* gghttp = gghttp = gg_change_passwd4(login, email.c_str(), oldPassword.c_str(), password.c_str(), tokenID.c_str(), tokenVal.c_str(), 0);
 		if (!gghttp) {
@@ -289,7 +289,7 @@ namespace GG {
 		sdl.timeout = GETINT(CFG_TIMEOUT);
 		ICMessage(IMI_LONGSTART, (int)&sdl);
 
-		Controller::getInstance()->setProxy();
+		Singleton<Controller>::getInstance()->setProxy();
 		gg_http* gghttp = gg_remind_passwd3(GETINT(CFG::login), email.c_str(), tokenID.c_str(), tokenVal.c_str(), 0);
 		if (!gghttp) {
 			ICMessage(IMI_LONGEND, (int)&sdl);
@@ -310,7 +310,8 @@ namespace GG {
 		return 0;
 	}
 
-	/*void importList() {
+	//TODO: Przepisaæ f-cjê na strumienie;
+	void importList() {
 		sDIALOG_choose sd;
 		sd.title = "Import listy kontaktów";
 		sd.info = "Wybierz sk¹d importowaæ.\nZostan¹ dodane tylko brakuj¹ce kontakty.";
@@ -340,7 +341,7 @@ namespace GG {
 						length = read(f, fbuff, length);
 						if (length != -1) {
 							fbuff[length] = 0;
-							setUserList(fbuff);
+							importListFromString(fbuff);
 							ICMessage(IMI_REFRESH_LST);
 						} else {
 							IMDEBUG(DBG_ERROR, "Nie mogê czytaæ pliku!");
@@ -349,7 +350,7 @@ namespace GG {
 						close(f);
 						ICMessage(IMI_INFORM, (int)"Kontakty zosta³y wczytane.");
 					} else {
-						ICMessage(IMI_ERROR, (int)"Nie mog³em wczytaæ pliku!", MB_TASKMODAL|MB_OK);
+						ICMessage(IMI_ERROR, (int)"Nie mog³em wczytaæ pliku!", MB_TASKMODAL | MB_OK);
 					}
 				}
 				delete[] buff;
@@ -362,6 +363,7 @@ namespace GG {
 		ICMessage(IMC_SAVE_CNT);
 	}
 
+	//TODO: Przepisaæ f-cjê na strumienie;
 	void exportList() {
 		sDIALOG_choose sd;
 		sd.title = "Export listy kontaktów";
@@ -388,7 +390,7 @@ namespace GG {
 				FILE* f;
 				if (GetSaveFileName(&of)) {
 					if ((f = fopen(of.lpstrFile, "wb"))) {
-						string str=getUserList();
+						string str = exportListToString();
 						fwrite((char*)str.c_str(), str.size(), 1, f);
 						fclose(f);
 						ICMessage(IMI_INFORM, (int)"Kontakty zosta³y zapisane.");
@@ -406,5 +408,5 @@ namespace GG {
 				break;
 			}
 		}
-	}*/
+	}
 }

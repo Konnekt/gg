@@ -134,32 +134,32 @@ namespace GG {
 	}
 	
 	void Controller::handleSetDefaultServers(Konnekt::ActionEvent &ev) {
-		if (ev.getActionNotify()->code == ACTN_ACTION) {
+		if (ev.withCode(ACTN_ACTION)) {
 			UIActionCfgSetValue(sUIAction(CFG::group, CFG::servers), GG::defaultServers);
 		}
 	}
 
 	void Controller::handleCreateGGAccount(Konnekt::ActionEvent &ev) {
-		if (ev.getActionNotify()->code == ACTN_ACTION) {
+		if (ev.withCode(ACTN_ACTION)) {
 			CloseHandle((HANDLE)Ctrl->BeginThread("CreateGGAccount", 0, 0, createGGAccount, 0, 0, 0));
 		}
 	}
 
 	void Controller::handleRemoveGGAccount(Konnekt::ActionEvent &ev) {
-		if (ev.getActionNotify()->code == ACTN_ACTION) {
+		if (ev.withCode(ACTN_ACTION)) {
 			CloseHandle((HANDLE)Ctrl->BeginThread("RemoveGGAccount", 0, 0, removeGGAccount, 0, 0, 0));
 		}
 	}
 	
 	void Controller::handleChangePassword(Konnekt::ActionEvent &ev) {
-		if (ev.getActionNotify()->code == ACTN_ACTION) {
+		if (ev.withCode(ACTN_ACTION)) {
 			CloseHandle((HANDLE)Ctrl->BeginThread("ChangePassword", 0, 0, changePassword, 0, 0, 0));
 		}
 	}
 
 
 	void Controller::handleRemindPassword(Konnekt::ActionEvent &ev) {
-		if (ev.getActionNotify()->code == ACTN_ACTION) {
+		if (ev.withCode(ACTN_ACTION)) {
 			CloseHandle((HANDLE)Ctrl->BeginThread("RemindPassword", 0, 0, remindPassword, 0, 0, 0));
 		}
 	}

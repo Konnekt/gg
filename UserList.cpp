@@ -2,10 +2,8 @@
 #include "GG.h"
 #include "Controller.h"
 
-using Stamina::stringf;
-
 namespace GG {
-	void onUserlistReply(gg_event * e) {
+	/*void onUserlistReply(gg_event * e) {
 		switch(e->event.userlist.type) {
 			case GG_USERLIST_GET_MORE_REPLY: {
 				if (!e->event.userlist.reply || !*e->event.userlist.reply)
@@ -19,7 +17,7 @@ namespace GG {
 				if (userListBuffer.empty()) {
 					ICMessage(IMI_INFORM, (int)"Na serwerze nie ma kontaktów!");
 				} else {
-					importListFromString((char*)userListBuffer.c_str());
+					importListFromString((String)userListBuffer);
 					userListBuffer = "";
 					ICMessage(IMI_REFRESH_LST);
 					ICMessage(IMI_INFORM, (int)"Kontakty zosta³y pobrane.");
@@ -36,20 +34,7 @@ namespace GG {
 				break;
 			}
 		};
-	}
-
-	/*
-	imiê;nazwisko;pseudonim;wyœwietlane;telefon_komórkowy;grupa;uin;adres_email;dostê
-	pny;œcie¿ka_dostêpny;wiadomoœæ;œcie¿ka_wiadomoœæ;ukrywanie;telefon_domowy
-
-	Funkcje mniej oczywistych pól to:
-
-		* dostêpny okreœla dŸwiêki zwi¹zane z pojawieniem siê danej osoby i przyjmuje wartoœci 0 (u¿yte zostan¹ ustawienia globalne), 1 (dŸwiêk powiadomienia zostanie wy³¹czony), 2 (zostanie odtworzony plik okreœlony w polu œcie¿ka_dostêpny).
-		* wiadomoœæ dzia³a podobnie jak dostêpny, ale okreœla dŸwiêk dla przychodz¹cej wiadomoœci.
-		* ukrywanie okreœla czy bêdziemy dostêpni (0) czy niedostêpni (1) dla danej osoby w trybie tylko dla znajomych.
-
-	Pole niewype³nione mo¿e zostaæ puste, a w przypadku pól liczbowych, przyj¹æ wartoœæ 0. 
-	*/
+	}*/
 
 	string getSoundSetting(tCntId cnt, const std::string& type) {
 		string result;
@@ -78,7 +63,7 @@ namespace GG {
 				result += cnt.getDisplay() + separator;
 				result += cnt.getString(Contact::colCellPhone) + separator;
 				result += cnt.getString(Contact::colGroup) + separator;
-				result += (cnt.getNet() == GG::net ? cnt.getUid().c_str() : "") + separator;
+				result += (cnt.getNet() == net ? cnt.getUidString().c_str() : "") + separator;
 				result += cnt.getEmail() + separator;
 				result += getSoundSetting(i, "newUser") + separator;
 				result += getSoundSetting(i, "newMsg") + separator;
@@ -103,29 +88,23 @@ namespace GG {
 	Pole niewype³nione mo¿e zostaæ puste, a w przypadku pól liczbowych, przyj¹æ wartoœæ 0. 
 	*/
 
-	//TODO: Przepisaæ f-cjê na strumienie;
-	int importListFromString(String userList) {
-		deque <string> ignore_group; // ignorowane grupy
+	void importListFromString(String userList) {
+		deque<String> ignoreGroups; // ignorowane grupy
 
 		userList.replace("\r", "");
-		Stamina::tStringVector lines;
-		Stamina::split(userList, "\n", lines, false);
+		tStringVector lines;
+		split(userList, "\n", lines, false);
 
-		for (Stamina::tStringVector::iterator line = lines.begin(); line != lines.end(); ++line) {
+		for (tStringVector::iterator line = lines.begin(); line != lines.end(); ++line) {
 			if (line->empty() || (*line).substr(0, 1) == '#' || line->find(';') == string::npos)
 				continue;
 
-			Stamina::tStringVector res;
-			Stamina::split(*line, ";", res, true);
+			tStringVector res;
+			split(*line, ";", res, true);
 			enum Fields {
 				fName, fSurname, fNick, fDisplay, fCell, fGroup, fUin, fEmail, fSndOnline, fSndOnlinePath, fSndMsg, fSndMsgPath, fHide, fPhone
 			};
 			res.resize(fPhone + 1);
-			/*
-			0 - imiê; 1 - nazwisko; 2 - pseudonim; 3 - wyœwietlane; 4 - telefon_komórkowy;
-			5 - grupa; 6 - uin; 7 - adres_email; 8 - dostêpny; 9 - œcie¿ka_dostêpny;
-			10 - wiadomoœæ; 11 - œcie¿ka_wiadomoœæ; 12 - ukrywanie; 13 - telefon_domowy;
-			*/
 			if (!atoi(res[fUin].c_str())) res[fUin] = "";
 
 			if (res[fDisplay].empty() && res[fUin].empty()) {
@@ -133,7 +112,7 @@ namespace GG {
 				msg += "[" + inttostr(line - lines.begin()) + "] \"" + (*line).substr(0, 100) + "\"";
 				msg +="\r\nPrzerwaæ dodawanie?";
 				if (Ctrl->IMessage(&sIMessage_msgBox(IMI_CONFIRM, msg.c_str())))
-					return 0;
+					return;
 			}
 
 			int pos = -1;
@@ -161,11 +140,11 @@ namespace GG {
 				res[fGroup].erase(res[fGroup].find(','));
 			}
 			if (!res[fGroup].empty()) {
-				if (!ICMessage(IMC_GRP_FIND, (int)res[fGroup].c_str()) && std::find(ignore_group.begin(), ignore_group.end(), res[fGroup]) == ignore_group.end()) {
+				if (!ICMessage(IMC_GRP_FIND, (int)res[fGroup].c_str()) && find(ignoreGroups.begin(), ignoreGroups.end(), res[fGroup]) == ignoreGroups.end()) {
 					if (ICMessage(IMI_CONFIRM, (int)stringf("Kontakt %s by³ zapisany z grup¹ %s.\n Dodaæ j¹?", res[fDisplay].c_str(), res[fGroup].c_str()).c_str())) {
 						ICMessage(IMC_GRP_ADD, (int)res[fGroup].c_str());
 					} else {
-						ignore_group.push_back(res[fGroup]);
+						ignoreGroups.push_back(res[fGroup]);
 						res[fGroup] = "";
 					}
 				}
@@ -200,17 +179,18 @@ namespace GG {
 
 			cnt.changed();
 		}
-		return 0;
+		ICMessage(IMI_REFRESH_LST);
+		ICMessage(IMI_INFORM, (int)"Kontakty zosta³y wczytane.");
 	}
 
-	unsigned int __stdcall GG::doListExport(LPVOID lParam) {
+	//TODO: Wymagaj¹ dzia³aj¹cych eventów i f-cji je obs³ugujêcej
+	/*unsigned int __stdcall exportListToServer(LPVOID lParam) {
 		if (onUserListRequest != ulrNone) {
 			ICMessage(IMI_ERROR, (int)"Poprzednia operacja na liœcie kontaktów nie zosta³a zakoñczona!");
 			return 0;
 		}
-
 		if (!GG::check(1, 1, 0, 1)) return 0;
-		//if (!IMessage(IMI_CONFIRM, 0, 0, (int)"Kontakty zostan¹ wys³ane na serwer.\nKontynuowaæ?")) _endthread();
+
 		onUserListRequest = lParam ? ulrClear : ulrPut;
 
 		sDIALOG_long sdl;
@@ -220,12 +200,8 @@ namespace GG {
 		sdl.cancelProc = disconnectDialogCB;
 		sdl.timeoutProc = timeoutDialogSimpleCB;
 		sdl.timeout = GETINT(CFG_TIMEOUT) * 2;
-		//sdl.threadId = ggThreadId;
 		ICMessage(IMI_LONGSTART, (int)&sdl);
-		//TODO: Sprawdziæ co tu jest.
-		string str = lParam ? "" : importList();
-		//IMLOG("CNTS %s", str.c_str());
-		if (gg_userlist_request(sess, GG_USERLIST_PUT, str.c_str())) {
+		if (gg_userlist_request(sess, GG_USERLIST_PUT, lParam ? "" : exportListToString().c_str())) {
 			ICMessage(IMI_ERROR, (int)"Wysy³anie nie powiod³o siê!",0);
 		} else {
 			while (ggThread && onUserListRequest != ulrDone) {
@@ -238,13 +214,13 @@ namespace GG {
 		return 0;
 	}
 
-	unsigned int __stdcall GG::doListImport(LPVOID lParam) {
+	unsigned int __stdcall importListFromServer(LPVOID lParam) {
 		if (onUserListRequest != ulrNone) {
 			ICMessage(IMI_ERROR, (int)"Poprzednia operacja na liœcie kontaktów nie zosta³a zakoñczona!");
 			return 0;
 		}
 		if (!GG::check(1, 1, 0, 1)) return 0;
-		//if (!IMessage(IMI_CONFIRM, 0, 0, (int)"Kontakty zostan¹ wczytane z serwera, zostan¹ dodane nowe kontakty i zaktualizowane istniej¹ce (nic nie zostanie usuniête!)\nKontynuowaæ?")) _endthread();
+
 		onUserListRequest = ulrGet;
 		userListBuffer = "";
 		sDIALOG_long sdl;
@@ -297,5 +273,5 @@ namespace GG {
 		IMLOG("______________");
 		ICMessage(IMI_LONGEND, (int)&sdl);
 		return 0;
-	}
+	}*/
 };

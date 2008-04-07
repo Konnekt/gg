@@ -1,8 +1,6 @@
 #include "StdAfx.h"
 #include "Controller.h"
 
-#define MAX_STRING 10000
-
 namespace GG {
 	bool __stdcall GG::disconnectDialogCB(sDIALOG_long*sd) {
 		IMLOG("Aktualny Socket w GG - %x @ %x", gg_thread_socket(sd->threadId, 0), sd->threadId);
@@ -56,14 +54,14 @@ namespace GG {
 
 		ICMessage(IMC_RESTORECURDIR);
 		string filename = (string)(char*)ICMessage(IMC_TEMPDIR) + "\\gg_token.gif";
-		FILE* tokenFile = fopen(filename.c_str(), "wb");
-		if (!tokenFile || !fwrite(http->body, http->body_size, 1, tokenFile)) {
-			IMDEBUG(DBG_ERROR, "! Could not create/write temp file for token fn=%s size=%d", filename.c_str(), http->body_size);
-			if (tokenFile)
-				fclose(tokenFile);
+		ofstream file(filename.c_str(), ios_base::out | ios_base::trunc);
+		file << http->body;
+		if (file.fail()) {
+			ICMessage(IMI_ERROR, (int)"Wyst¹pi³ b³¹d podczas zapisywania tokena.");
+			file.close();
 			return false;
 		}
-		fclose(tokenFile);
+		file.close();
 
 		sDIALOG_token dt;
 		dt.title = title.c_str();
@@ -310,7 +308,6 @@ namespace GG {
 		return 0;
 	}
 
-	//TODO: Przepisaæ f-cjê na strumienie;
 	void importList() {
 		sDIALOG_choose sd;
 		sd.title = "Import listy kontaktów";
@@ -326,44 +323,35 @@ namespace GG {
 				memset(&of, 0, sizeof(of));
 				of.lStructSize = sizeof(of) - 12;
 				of.lpstrFilter = "Txt\0*.txt\0*.*\0*.*\0";
-				char* buff = new char [MAX_STRING];
-				strcpy(buff, "");
-				of.lpstrFile = buff;
-				of.nMaxFile = MAX_STRING;
+				of.lpstrFile = new char[10000];
+				of.nMaxFile = 10000;
 				of.Flags = OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
 				of.lpstrDefExt = "txt";
-				int f;
 
 				if (GetOpenFileName(&of)) {
-					if ((f = open(of.lpstrFile, O_RDONLY | O_TEXT))) {
-						unsigned length = filelength(f);
-						char* fbuff = new char [length + 1];
-						length = read(f, fbuff, length);
-						if (length != -1) {
-							fbuff[length] = 0;
-							importListFromString(fbuff);
-							ICMessage(IMI_REFRESH_LST);
+					ifstream file(of.lpstrFile, ios_base::out);
+					if (file.is_open()) {
+						string fileContents;
+						file >> fileContents;
+						if (file.good()) {
+							importListFromString((String)fileContents);
 						} else {
-							IMDEBUG(DBG_ERROR, "Nie mogê czytaæ pliku!");
+							ICMessage(IMI_ERROR, (int)"Nie mog³em wczytaæ pliku!", MB_TASKMODAL | MB_OK);
 						}
-						delete[] fbuff;
-						close(f);
-						ICMessage(IMI_INFORM, (int)"Kontakty zosta³y wczytane.");
+						file.close();
 					} else {
 						ICMessage(IMI_ERROR, (int)"Nie mog³em wczytaæ pliku!", MB_TASKMODAL | MB_OK);
 					}
 				}
-				delete[] buff;
 				break;
 			} case 2: {
-				CloseHandle((HANDLE)Ctrl->BeginThread("ListImport", 0, 0, doListImport, 0, 0, 0));
+				//CloseHandle(Ctrl->BeginThread("importListFromServer", 0, 0, importListFromServer, 0, 0, 0));
 				break;
 			}
 		}
 		ICMessage(IMC_SAVE_CNT);
 	}
 
-	//TODO: Przepisaæ f-cjê na strumienie;
 	void exportList() {
 		sDIALOG_choose sd;
 		sd.title = "Export listy kontaktów";
@@ -379,32 +367,34 @@ namespace GG {
 				memset(&of, 0, sizeof(of));
 				of.lStructSize = sizeof(of) - 12;
 				of.lpstrFilter = "Txt\0*.txt\0*.*\0*.*\0";
-				char * buff = new char[MAX_STRING];
-				strcpy(buff, "kontakty");
-				of.lpstrFile = buff;
-				of.nMaxFile = MAX_STRING;
+				of.lpstrFile = new char[10000];
+				of.lpstrFile = "kontakty";
+				of.nMaxFile = 10000;
 				of.nFilterIndex = 1;
 				of.Flags = OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
 				of.lpstrDefExt = "txt";
 
-				FILE* f;
 				if (GetSaveFileName(&of)) {
-					if ((f = fopen(of.lpstrFile, "wb"))) {
-						string str = exportListToString();
-						fwrite((char*)str.c_str(), str.size(), 1, f);
-						fclose(f);
-						ICMessage(IMI_INFORM, (int)"Kontakty zosta³y zapisane.");
+					ofstream file(of.lpstrFile, ios_base::out);
+					if (file.is_open()) {
+						file << exportListToString();
+						if (file.good()) {
+							ICMessage(IMI_INFORM, (int)"Kontakty zosta³y zapisane.");
+						} else {
+							ICMessage(IMI_ERROR, (int)"Nie mog³em zapisaæ do pliku!", MB_TASKMODAL | MB_OK);
+						}
+						file.close();
 					} else {
-						ICMessage(IMI_ERROR, (int)"Nie mog³em zapisaæ do pliku!", MB_TASKMODAL|MB_OK);
+						ICMessage(IMI_ERROR, (int)"Nie mog³em zapisaæ do pliku!", MB_TASKMODAL | MB_OK);
 					}
 				}
-				delete [] buff;
+				delete[] of.lpstrFile;
 				break;
 			} case 2: {
-				CloseHandle((HANDLE)Ctrl->BeginThread("ListExport", 0, 0, doListExport, 0, 0, 0));
+				//CloseHandle(Ctrl->BeginThread("exportListToServer", 0, 0, exportListToServer, 0, 0, 0));
 				break;
 			} case 3: {
-				CloseHandle((HANDLE)Ctrl->BeginThread("ListExport", 0, 0, doListExport, (void*)1, 0, 0));
+				//CloseHandle(Ctrl->BeginThread("exportListToServer", 0, 0, exportListToServer, (void*)1, 0, 0));
 				break;
 			}
 		}

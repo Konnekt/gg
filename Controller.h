@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GG.h"
+#include "Helpers.h"
 #include "Dialogs.h"
 #include "UserList.h"
 
@@ -9,6 +10,11 @@ namespace GG {
 
 	public:
 		//typy
+		enum checkCriterion {
+			ccInternet = 2,
+			ccServer = 4,
+			ccData = 8
+		};
 
 	protected:
 		Controller();
@@ -40,17 +46,46 @@ namespace GG {
 		void handleChangePassword(ActionEvent& ev);
 		void handleRemindPassword(ActionEvent& ev);
 		void handleImportCntList(ActionEvent& ev);
+		void handleExportCntList(ActionEvent& ev);
+		void handleStatusOnline(ActionEvent& ev);
+		void handleStatusAway(ActionEvent& ev);
+		void handleStatusInvisible(ActionEvent& ev);
+		void handleStatusOffline(ActionEvent& ev);
 
 	public:
 		//API
 		//void apiEnabled(IMEvent& ev);
 
 	public:
+		//proste inline'y
+		inline bool isConnected() {
+			return connected;
+		}
+
+		inline tStatus getStatus() {
+			return status;
+		}
+		
+		inline string getStatusDescription() {
+			return statusDescription;
+		}
+
+	public:
 		//f-cje
 		void setProxy();
+		string getPassword();
+		bool checkConnection(unsigned short criterion = ccInternet | ccServer, bool warnUser = true);
+		bool connect(tStatus status, string description = "");
+		void setStatus(tStatus status, string description = "");
+		void sendMessage();
+		void disconnect(string description = "");
 
 	protected:
 		//zmienne wewnêtrzne
+		bool connected;
+		tStatus status;
+		string statusDescription;
+		gg_session* session;
 
 	public:
 		//zmienne zewnêtrzne

@@ -281,19 +281,19 @@
 //			break;
 //		} case IMIC_GG_ACCOUNT: {
 //			ACTIONONLY(an);
-//			CloseHandle((HANDLE)Ctrl->BeginThread("NewAccount", 0, 0, dlgAccount, 0, 0, 0));
+//			CloseHandle(Ctrl->BeginThread("NewAccount", 0, 0, dlgAccount, 0, 0, 0));
 //			break;
 //		} case IMIC_GG_REMOVEACCOUNT: {
 //			ACTIONONLY(an);
-//			CloseHandle((HANDLE)Ctrl->BeginThread("RemoveAccount", 0, 0, dlgRemoveAccount, 0, 0, 0));
+//			CloseHandle(Ctrl->BeginThread("RemoveAccount", 0, 0, dlgRemoveAccount, 0, 0, 0));
 //			break;
 //		} case IMIC_GG_NEWPASS: {
 //			ACTIONONLY(an);
-//			CloseHandle((HANDLE)Ctrl->BeginThread("NewPass", 0, 0, dlgNewPass, 0, 0, 0));
+//			CloseHandle(Ctrl->BeginThread("NewPass", 0, 0, dlgNewPass, 0, 0, 0));
 //			break;
 //		} case IMIC_GG_REMINDPASS: {
 //			ACTIONONLY(an);
-//			CloseHandle((HANDLE)Ctrl->BeginThread("RemindPass", 0, 0, dlgRemindPass, 0, 0, 0));
+//			CloseHandle(Ctrl->BeginThread("RemindPass", 0, 0, dlgRemindPass, 0, 0, 0));
 //			break;
 //		} case IMIC_GG_DEFSERVERS: {
 //			ACTIONONLY(an);
@@ -327,7 +327,7 @@
 //			break;
 //		} case IMIA_LIST_GG_REFRESH: {
 //			ACTIONONLY(an);
-//			CloseHandle((HANDLE)Ctrl->BeginThread("RefreshList", 0, 0, dlgListRefresh));
+//			CloseHandle(Ctrl->BeginThread("RefreshList", 0, 0, dlgListRefresh));
 //			break;
 //		// ----------------------- CNT
 //		} case IMIA_GGHIDESTATUS: {

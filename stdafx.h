@@ -35,6 +35,7 @@
 #include <stdstring.h>
 #include <string>
 #include <sstream>
+#include <fstream>
 
 #pragma comment(lib, "comctl32.lib")
 
@@ -46,6 +47,7 @@
 #endif
 
 //Libgadu
+//TODO: W tym s¹ makra podmieniaj¹ce write/send. Nie pozwala na u¿ywanie tej f-cji - to idiotyzm! Trzeba obejœæ.
 #include <libgadu/compat_w32.h>
 #include <libgadu/libgadu/include/libgadu.h>
 

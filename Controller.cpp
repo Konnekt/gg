@@ -2,7 +2,7 @@
 #include "Controller.h"
 
 namespace GG {
-	Controller::Controller() {
+	Controller::Controller() : connected(false), status(ST_OFFLINE), statusDescription(""), session(0) {
 		IMessageDispatcher& d = getIMessageDispatcher();
 		ActionDispatcher& a = getActionDispatcher();
 		Config& c = getConfig();
@@ -46,6 +46,12 @@ namespace GG {
 		a.connect(ACT::removeGGAccount, bind(&Controller::handleRemoveGGAccount, this, _1));
 		a.connect(ACT::changePassword, bind(&Controller::handleChangePassword, this, _1));
 		a.connect(ACT::remindPassword, bind(&Controller::handleRemindPassword, this, _1));
+		a.connect(ACT::importCntList, bind(&Controller::handleImportCntList, this, _1));
+		a.connect(ACT::exportCntList, bind(&Controller::handleExportCntList, this, _1));
+		a.connect(ACT::statusOnline, bind(&Controller::handleStatusOnline, this, _1));
+		a.connect(ACT::statusAway, bind(&Controller::handleStatusAway, this, _1));
+		a.connect(ACT::statusInvisible, bind(&Controller::handleStatusInvisible, this, _1));
+		a.connect(ACT::statusOffline, bind(&Controller::handleStatusOffline, this, _1));
 
 		//Konfiguracja
 		c.setColumn(tableConfig, CFG::login, ctypeString, "", "GG/login");
@@ -72,7 +78,7 @@ namespace GG {
 		IconRegister(IML_16, ICO::blocking, Ctrl->hDll(), IDI_BLOCKING);
 		IconRegister(IML_16, ICO::connecting, Ctrl->hDll(), IDI_CONNECTING);
 
-		//Config
+		//Konfiguracja
 		UIGroupAdd(IMIG_CFG_USER, CFG::group, 0, "GG", ICO::logo);
 		UIActionCfgAddPluginInfoBox2(CFG::group,
 			"<div>Wtyczka umo¿liwia komunikacjê przy pomocy najpopularniejszego protoko³u w Polsce."
@@ -130,40 +136,88 @@ namespace GG {
 		UIActionAdd(CFG::group, ACT::removeGGAccount, ACTT_BUTTON, SetActParam("Usuñ konto z serwera", AP_ICO, inttostr(ICON_ACCOUNTREMOVE)).c_str(), 0, 170, 30);
 		UIActionAdd(CFG::group, 0, ACTT_GROUPEND, "");
 
+		//zmiana statusu
+		UIGroupAdd(IMIG_STATUS, ACT::status, 0, "GG", ICO::offline);
+		UIActionAdd(ACT::status, ACT::statusDescripton, 0, "Opis", 0);
+		UIActionAdd(ACT::status, ACT::statusOnline, 0, "Dostêpny", ICO::online);
+		UIActionAdd(ACT::status, ACT::statusAway, 0, "Zaraz wracam", ICO::away);
+		UIActionAdd(ACT::status, ACT::statusInvisible, 0, "Ukryty", ICO::invisible);
+		UIActionAdd(ACT::status, ACT::statusOffline, 0, "Niedostêpny", ICO::offline);
+
 		ev.setSuccess();
 	}
 	
 	void Controller::handleSetDefaultServers(Konnekt::ActionEvent &ev) {
-		if (ev.withCode(ACTN_ACTION)) {
+		if (ev.withCode(ACTN_ACTION))
 			UIActionCfgSetValue(sUIAction(CFG::group, CFG::servers), GG::defaultServers);
-		}
 	}
 
 	void Controller::handleCreateGGAccount(Konnekt::ActionEvent &ev) {
-		if (ev.withCode(ACTN_ACTION)) {
-			CloseHandle((HANDLE)Ctrl->BeginThread("CreateGGAccount", 0, 0, createGGAccount, 0, 0, 0));
-		}
+		if (ev.withCode(ACTN_ACTION))
+			CloseHandle(Ctrl->BeginThread("CreateGGAccount", 0, 0, createGGAccount, 0, 0, 0));
 	}
 
 	void Controller::handleRemoveGGAccount(Konnekt::ActionEvent &ev) {
-		if (ev.withCode(ACTN_ACTION)) {
-			CloseHandle((HANDLE)Ctrl->BeginThread("RemoveGGAccount", 0, 0, removeGGAccount, 0, 0, 0));
-		}
+		if (ev.withCode(ACTN_ACTION))
+			CloseHandle(Ctrl->BeginThread("RemoveGGAccount", 0, 0, removeGGAccount, 0, 0, 0));
 	}
 	
 	void Controller::handleChangePassword(Konnekt::ActionEvent &ev) {
-		if (ev.withCode(ACTN_ACTION)) {
-			CloseHandle((HANDLE)Ctrl->BeginThread("ChangePassword", 0, 0, changePassword, 0, 0, 0));
-		}
+		if (ev.withCode(ACTN_ACTION))
+			CloseHandle(Ctrl->BeginThread("ChangePassword", 0, 0, changePassword, 0, 0, 0));
 	}
-
 
 	void Controller::handleRemindPassword(Konnekt::ActionEvent &ev) {
+		if (ev.withCode(ACTN_ACTION))
+			CloseHandle(Ctrl->BeginThread("RemindPassword", 0, 0, remindPassword, 0, 0, 0));
+	}
+
+	void Controller::handleImportCntList(Konnekt::ActionEvent &ev) {
+		if (ev.withCode(ACTN_ACTION))
+			importList();
+	}
+
+	void Controller::handleExportCntList(Konnekt::ActionEvent &ev) {
+		if (ev.withCode(ACTN_ACTION))
+			exportList();
+	}
+
+	//TODO: Opisy!
+	void Controller::handleStatusOnline(Konnekt::ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION)) {
-			CloseHandle((HANDLE)Ctrl->BeginThread("RemindPassword", 0, 0, remindPassword, 0, 0, 0));
+			if (!isConnected())
+				IMLOG("%i", connect(ST_ONLINE));
+			else if (getStatus() != ST_ONLINE)
+				setStatus(ST_ONLINE);
+		}	
+	}
+
+	void Controller::handleStatusAway(Konnekt::ActionEvent &ev) {
+		if (ev.withCode(ACTN_ACTION)) {
+			if (!isConnected())
+				connect(ST_AWAY);
+			else if (getStatus() != ST_AWAY)
+				setStatus(ST_AWAY);
 		}
 	}
 
+	void Controller::handleStatusInvisible(Konnekt::ActionEvent &ev) {
+		if (ev.withCode(ACTN_ACTION)) {
+			if (!isConnected())
+				connect(ST_HIDDEN);
+			else if (getStatus() != ST_HIDDEN)
+				setStatus(ST_HIDDEN);
+		}	
+	}
+
+	void Controller::handleStatusOffline(Konnekt::ActionEvent &ev) {
+		if (ev.withCode(ACTN_ACTION)) {
+			if (getStatus() != ST_OFFLINE)
+				setStatus(ST_OFFLINE);
+			if (isConnected())
+				disconnect();
+		}	
+	}
 	
 	void Controller::setProxy() {
 		static char host[100];
@@ -187,5 +241,87 @@ namespace GG {
 			gg_proxy_host = 0;
 			gg_proxy_port = 0;
 		}
+	}
+	
+	string Controller::getPassword() {
+		string password = GETSTR(CFG::password);
+		if (password.empty()) {
+			sDIALOG_access sda;
+			sda.flag = DFLAG_SAVE;
+			sda.title = "Has³o do konta GG";
+			sda.info = "Aby wykonaæ wybran¹ operacjê, musisz podaæ has³o do swojego konta GG.";
+			sda.save = false;
+
+			if (!ICMessage(IMI_DLGPASS, (int)&sda)) return "";
+			password = sda.pass;
+			if (sda.save) {
+				SETSTR(CFG::password, password.c_str());
+			}
+		}
+		return password;
+	}
+
+	bool Controller::checkConnection(unsigned short criterion, bool warnUser) {
+		if ((ccInternet & criterion) == ccInternet) {
+			if (!ICMessage(IMC_CONNECTED)) {
+				if (warnUser)
+					ICMessage(IMI_ERROR, (int)"Operacja wymaga po³¹czenia z Internetem!\nSprawdŸ czy prawid³owo skonfigurowa³eœ po³¹czenie w konfiguracji.", MB_TASKMODAL | MB_OK);
+				return false;
+			}
+		}
+		
+		if ((ccData & criterion) == ccData) {
+			if (!strlen(GETSTR(CFG::login))) {
+				if (warnUser)
+					ICMessage(IMI_ERROR, (int)"Musisz podaæ numer Gadu-Gadu w konfiguracji.", MB_TASKMODAL | MB_OK);
+				return false;
+			}
+		}
+		
+		if ((ccServer & criterion) == ccServer) {
+			if (!isConnected()) {
+				if (warnUser)
+					ICMessage(IMI_ERROR, (int)"Musisz byæ po³aczony z serwerem GG.", MB_TASKMODAL | MB_OK);
+				return false;
+			}
+		}
+		return true;
+	}
+
+	bool Controller::connect(tStatus status, string description) {
+		if (connected)
+			return false;
+		if (!checkConnection(ccInternet|ccData))
+			return false;
+
+		gg_login_params params;
+		memset(&params, 0, sizeof(params));
+
+		params.uin = atoi(GETSTR(CFG::login));
+		string password = getPassword();
+		params.password = (char*)password.c_str();
+		if (!strlen(params.password))
+			return false;
+		params.async = true;
+		params.status = convertKStatus(status);
+		params.status_descr = (char*)description.c_str();
+
+		session = gg_login(&params);
+		if (session)
+			return connected = true;
+		else
+			return false;
+	}
+
+	void Controller::setStatus(tStatus status, std::string description) {
+		
+	}
+
+	void Controller::disconnect(string description) {
+		if (!isConnected())
+			return;
+		setStatus(ST_HIDDEN, description);
+		gg_logoff(session);
+		gg_free_session(session);
 	}
 }

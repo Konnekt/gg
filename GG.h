@@ -46,6 +46,16 @@ namespace GG {
 		const unsigned changePassword = net * 1000 + 203;
 		const unsigned remindPassword = net * 1000 + 204;
 		const unsigned importCntList = net * 1000 + 205;
+		const unsigned exportCntList = net * 1000 + 205;
+		const unsigned deleteCnts = net * 1000 + 206;
+		const unsigned refreshCnts = net * 1000 + 207;
+
+		const unsigned status = net * 1000 + 208;
+		const unsigned statusDescripton = net * 1000 + 209;
+		const unsigned statusOnline = net * 1000 + 210;
+		const unsigned statusAway = net * 1000 + 211;
+		const unsigned statusInvisible = net * 1000 + 212;
+		const unsigned statusOffline = net * 1000 + 213;
 	};
 	
 	namespace ICO {

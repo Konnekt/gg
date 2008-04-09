@@ -47,6 +47,7 @@ namespace GG {
 		void handleRemindPassword(ActionEvent& ev);
 		void handleImportCntList(ActionEvent& ev);
 		void handleExportCntList(ActionEvent& ev);
+		void handleStatusDescription(ActionEvent& ev);
 		void handleStatusOnline(ActionEvent& ev);
 		void handleStatusAway(ActionEvent& ev);
 		void handleStatusInvisible(ActionEvent& ev);
@@ -75,10 +76,10 @@ namespace GG {
 		void setProxy();
 		string getPassword();
 		bool checkConnection(unsigned short criterion = ccInternet | ccServer, bool warnUser = true);
-		bool connect(tStatus status, string description = "");
-		void setStatus(tStatus status, string description = "");
+		bool connect(tStatus status, const char* description = "");
+		void setStatus(tStatus status, const char* description = "");
 		void sendMessage();
-		void disconnect(string description = "");
+		void disconnect(const char* description = "");
 
 	protected:
 		//zmienne wewnêtrzne

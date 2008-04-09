@@ -54,8 +54,8 @@ namespace GG {
 
 		ICMessage(IMC_RESTORECURDIR);
 		string filename = (string)(char*)ICMessage(IMC_TEMPDIR) + "\\gg_token.gif";
-		ofstream file(filename.c_str(), ios_base::out | ios_base::trunc);
-		file << http->body;
+		ofstream file(filename.c_str(), ios_base::out | ios_base::trunc | ios_base::binary);
+		file.write(http->body, http->body_size);
 		if (file.fail()) {
 			ICMessage(IMI_ERROR, (int)"Wyst¹pi³ b³¹d podczas zapisywania tokena.");
 			file.close();
@@ -74,6 +74,7 @@ namespace GG {
 		return !tokenVal.empty();
 	}
 
+	//TODO: Poni¿sze funkcje mog¹ informowaæ rodzajach b³êdów (te informacje s¹ w logach, pewnie da siê je wyci¹gn¹æ).
 	unsigned int __stdcall createGGAccount(LPVOID lParam) {
 		if (ICMessage(IMI_CONFIRM, (int)"Zostanie za³o¿one nowe konto w sieci Gadu-Gadu™.\nKontynuowaæ?", MB_TASKMODAL | MB_YESNO) == IDNO) 
 			return 0;
@@ -90,7 +91,7 @@ namespace GG {
 		sDIALOG_enter sde;
 		sde.title = "GG - nowe konto [krok 2/3]";
 		sde.info = "Podaj swój adres email, na który bêdzie mo¿na kiedyœ przes³aæ has³o.";
-		if (!IMessage(IMI_DLGENTER, Net::core, imtCore, (int)&sde) || !*sde.value)
+		if (!ICMessage(IMI_DLGENTER, (int)&sde) || !*sde.value)
 			return 0;
 		string email = sde.value;
 
@@ -324,6 +325,7 @@ namespace GG {
 				of.lStructSize = sizeof(of) - 12;
 				of.lpstrFilter = "Txt\0*.txt\0*.*\0*.*\0";
 				of.lpstrFile = new char[10000];
+				strcpy(of.lpstrFile, "");
 				of.nMaxFile = 10000;
 				of.Flags = OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
 				of.lpstrDefExt = "txt";
@@ -343,6 +345,7 @@ namespace GG {
 						ICMessage(IMI_ERROR, (int)"Nie mog³em wczytaæ pliku!", MB_TASKMODAL | MB_OK);
 					}
 				}
+				delete[] of.lpstrFile;
 				break;
 			} case 2: {
 				//CloseHandle(Ctrl->BeginThread("importListFromServer", 0, 0, importListFromServer, 0, 0, 0));
@@ -367,8 +370,9 @@ namespace GG {
 				memset(&of, 0, sizeof(of));
 				of.lStructSize = sizeof(of) - 12;
 				of.lpstrFilter = "Txt\0*.txt\0*.*\0*.*\0";
-				of.lpstrFile = new char[10000];
-				of.lpstrFile = "kontakty";
+				char* buff = new char[10000];
+				strcpy(buff, "kontakty");
+				of.lpstrFile = buff;
 				of.nMaxFile = 10000;
 				of.nFilterIndex = 1;
 				of.Flags = OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
@@ -388,7 +392,7 @@ namespace GG {
 						ICMessage(IMI_ERROR, (int)"Nie mog³em zapisaæ do pliku!", MB_TASKMODAL | MB_OK);
 					}
 				}
-				delete[] of.lpstrFile;
+				delete[] buff;
 				break;
 			} case 2: {
 				//CloseHandle(Ctrl->BeginThread("exportListToServer", 0, 0, exportListToServer, 0, 0, 0));

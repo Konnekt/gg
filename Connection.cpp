@@ -410,7 +410,7 @@ unsigned int __stdcall GG::threadProc (void * lpParameter) {
 			gg_free_session(sess);
 			sess = 0;
 			PlugStatusChange(ST_OFFLINE, "");
-			
+
 			// Wyzerowanie statusow na liscie
 			c = IMessage(IMC_CNT_COUNT);
 			for (int i=1 ; i<c;i++) {

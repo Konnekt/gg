@@ -38,7 +38,7 @@ namespace GG {
 				gg_thread_socket_unlock();
 				return r == WSA_WAIT_TIMEOUT;*/
 			}
-			return 0; /*TODO: Wymyœleæ coœ na timeout!*/
+			return 0; /*todo: Wymyœleæ coœ na timeout!*/
 		}
 		return true;
 	}
@@ -55,7 +55,7 @@ namespace GG {
 		ICMessage(IMC_RESTORECURDIR);
 		string filename = (string)(char*)ICMessage(IMC_TEMPDIR) + "\\gg_token.gif";
 		ofstream file(filename.c_str(), ios_base::out | ios_base::trunc | ios_base::binary);
-		file.write(http->body, http->body_size);
+		//file.write(http->body, http->body_size);
 		if (file.fail()) {
 			ICMessage(IMI_ERROR, (int)"Wyst¹pi³ b³¹d podczas zapisywania tokena.");
 			file.close();
@@ -74,7 +74,7 @@ namespace GG {
 		return !tokenVal.empty();
 	}
 
-	//TODO: Poni¿sze funkcje mog¹ informowaæ rodzajach b³êdów (te informacje s¹ w logach, pewnie da siê je wyci¹gn¹æ).
+	//todo: Poni¿sze funkcje mog¹ informowaæ rodzajach b³êdów (te informacje s¹ w logach, pewnie da siê je wyci¹gn¹æ).
 	unsigned int __stdcall createGGAccount(LPVOID lParam) {
 		if (ICMessage(IMI_CONFIRM, (int)"Zostanie za³o¿one nowe konto w sieci Gadu-Gadu™.\nKontynuowaæ?", MB_TASKMODAL | MB_YESNO) == IDNO) 
 			return 0;
@@ -334,6 +334,7 @@ namespace GG {
 					ifstream file(of.lpstrFile, ios_base::out);
 					if (file.is_open()) {
 						string fileContents;
+						//todo: Nie wiem czy to dzia³a.
 						file >> fileContents;
 						if (file.good()) {
 							importListFromString((String)fileContents);

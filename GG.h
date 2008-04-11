@@ -5,7 +5,7 @@
 #define MSG_TIMEOUT 20
 
 namespace GG {
-	//TODO: Net w jakiœ sposób bêdzie dynamiczny.
+	//todo: Net w jakiœ sposób bêdzie dynamiczny.
 	const unsigned net = 10; // wartoœæ NET
 	const int sig = (int)"GG"; //sygnatura
 	const int name = (int)"Gadu-Gadu"; //nazwa
@@ -25,7 +25,7 @@ namespace GG {
 		const unsigned useSSL = group + 9;
 		const unsigned resumeDisconnected = group + 10;
 		
-		/* TODO: Stare id kolumn; zapewne przydadz¹ siê przy pisaniu f-cji updatuj¹cej plugin.
+		/* todo: Stare id kolumn; zapewne przydadz¹ siê przy pisaniu f-cji updatuj¹cej plugin.
 		const unsigned login = 1053;
 		const unsigned password = 1054;
 		const unsigned status = 1055;
@@ -59,15 +59,15 @@ namespace GG {
 	};
 	
 	namespace ICO {
-		const unsigned logo = net * 1000 + 300;
-		const unsigned server = net * 1000 + 301;
-		const unsigned overlay = net * 1000 + 302;
-		const unsigned online = net * 1000 + 303;
-		const unsigned away = net * 1000 + 304;
-		const unsigned invisible = net * 1000 + 305;
-		const unsigned offline = net * 1000 + 306;
-		const unsigned blocking = net * 1000 + 307;
-		const unsigned connecting = net * 1000 + 308;
+		const unsigned server = net * 1000 + 300;
+		const unsigned logo = UIIcon(IT_LOGO, net, 0, 0);
+		const unsigned overlay = UIIcon(IT_OVERLAY, net, 0, 0);
+		const unsigned online = UIIcon(IT_STATUS, net, ST_ONLINE, 0);
+		const unsigned away = UIIcon(IT_STATUS, net, ST_AWAY, 0);
+		const unsigned invisible = UIIcon(IT_STATUS, net, ST_HIDDEN, 0);
+		const unsigned offline = UIIcon(IT_STATUS, net, ST_OFFLINE, 0);
+		const unsigned blocking = UIIcon(IT_STATUS, net, ST_BLOCKING, 0);
+		const unsigned connecting = UIIcon(IT_STATUS, net, ST_CONNECTING, 0);
 	};
 
 	enum userListRequest {

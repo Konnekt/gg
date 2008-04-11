@@ -38,7 +38,7 @@ namespace GG {
 
 	string getSoundSetting(tCntId cnt, const std::string& type) {
 		string result;
-		//TODO: zgodnie z nowym API to bêdzie wygl¹da³o nieco inaczej… nie wiem tylko jak ;)
+		//todo: zgodnie z nowym API to bêdzie wygl¹da³o nieco inaczej… nie wiem tylko jak ;)
 		string sound = Ctrl->DTgetStr(Tables::tableContacts, cnt, ("SOUND_" + type).c_str());
 		if (sound == "") {
 			return "0;";
@@ -158,7 +158,7 @@ namespace GG {
 					sound = "!";
 				else if (res[fSndOnline] == "2")
 					sound = res[fSndOnlinePath];
-				//TODO: Z nowym API to powinno wygl¹daæ inaczej.
+				//todo: Z nowym API to powinno wygl¹daæ inaczej.
 				Ctrl->DTsetStr(DTCNT, pos, "SOUND_newUser", sound.c_str());
 			}
 
@@ -168,7 +168,7 @@ namespace GG {
 					sound = "!";
 				else if (res[fSndMsg] == "2")
 					sound = res[fSndMsgPath];
-				//TODO: To te¿…
+				//todo: To te¿…
 				Ctrl->DTsetStr(DTCNT, pos, "SOUND_newMsg", sound.c_str());
 			}
 
@@ -183,7 +183,7 @@ namespace GG {
 		ICMessage(IMI_INFORM, (int)"Kontakty zosta³y wczytane.");
 	}
 
-	//TODO: Wymagaj¹ dzia³aj¹cych eventów i f-cji je obs³ugujêcej
+	//todo: Wymagaj¹ dzia³aj¹cych eventów i f-cji je obs³ugujêcej
 	/*unsigned int __stdcall exportListToServer(LPVOID lParam) {
 		if (onUserListRequest != ulrNone) {
 			ICMessage(IMI_ERROR, (int)"Poprzednia operacja na liœcie kontaktów nie zosta³a zakoñczona!");

@@ -1,4 +1,4 @@
-//TODO: Dziwne, ale konieczna jest taka kolejnoœæ include'ów. Proponujê dalsze œledztwo, bo problem jest ciekawy.
+//todo: Dziwne, ale konieczna jest taka kolejnoœæ include'ów. Proponujê dalsze œledztwo, bo problem jest ciekawy.
 
 // include just once
 #pragma once
@@ -47,7 +47,7 @@
 #endif
 
 //Libgadu
-//TODO: W tym s¹ makra podmieniaj¹ce write/send. Nie pozwala na u¿ywanie tej f-cji - to idiotyzm! Trzeba obejœæ.
+//todo: W tym s¹ makra podmieniaj¹ce write/send. Nie pozwala na u¿ywanie tej f-cji - to idiotyzm! Trzeba obejœæ.
 #include <libgadu/compat_w32.h>
 #include <libgadu/libgadu/include/libgadu.h>
 

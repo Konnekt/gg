@@ -2,6 +2,7 @@
 #include "Controller.h"
 
 namespace GG {
+	//debug: To tylko tymczasowe.
 	void handler (int level, const char * format, va_list p) {
 		int size = _vscprintf(format, p);
 		char * buff = new char [size + 2];
@@ -33,20 +34,20 @@ namespace GG {
 		//IMessage
 		d.connect(IM_UI_PREPARE, bind(&Controller::onPrepareUI, this, _1));
 		d.connect(IM_START, bind(&Controller::onStart, this, _1));
-		/*d.connect(IM_END, bind(&Controller::onEnd, this, _1));
-		d.connect(IM_DISCONNECT, bind(&Controller::onDisconnect, this, _1));
+		//d.connect(IM_END, bind(&Controller::onEnd, this, _1));
+		//d.connect(IM_DISCONNECT, bind(&Controller::onDisconnect, this, _1));
 		d.connect(IM_GET_STATUS, bind(&Controller::onGetStatus, this, _1));
 		d.connect(IM_GET_STATUSINFO, bind(&Controller::onGetStatusInfo, this, _1));
-		d.connect(IM_GET_UID, bind(&Controller::onGetUID, this, _1));
-		//TODO: Pamiêtaæ, ¿e zamiast IM_MSG_RCV i IM_MSG_SEND jest nowa MQ
-		d.connect(IM_CNT_ADD, bind(&Controller::onCntAdd, this, _1));
-		d.connect(IM_CNT_REMOVE, bind(&Controller::onCntRemove, this, _1));
-		d.connect(IM_CNT_CHANGED, bind(&Controller::onCntChanged, this, _1));
-		d.connect(IM_CNT_DOWNLOAD, bind(&Controller::onCntDownload, this, _1));
-		d.connect(IM_CNT_UPLOAD, bind(&Controller::onCntUpload, this, _1));
-		d.connect(IM_CNT_SEARCH, bind(&Controller::onCntSearch, this, _1));
-		d.connect(IM_IGN_CHANGED, bind(&Controller::onIgnChanged, this, _1));
-		d.connect(IM_ISCONNECTED, bind(&Controller::onIsConnected, this, _1));*/
+		//d.connect(IM_GET_UID, bind(&Controller::onGetUID, this, _1));
+		//todo: Pamiêtaæ, ¿e zamiast IM_MSG_RCV i IM_MSG_SEND jest nowa MQ
+		//d.connect(IM_CNT_ADD, bind(&Controller::onCntAdd, this, _1));
+		//d.connect(IM_CNT_REMOVE, bind(&Controller::onCntRemove, this, _1));
+		//d.connect(IM_CNT_CHANGED, bind(&Controller::onCntChanged, this, _1));
+		//d.connect(IM_CNT_DOWNLOAD, bind(&Controller::onCntDownload, this, _1));
+		//d.connect(IM_CNT_UPLOAD, bind(&Controller::onCntUpload, this, _1));
+		//d.connect(IM_CNT_SEARCH, bind(&Controller::onCntSearch, this, _1));
+		//d.connect(IM_IGN_CHANGED, bind(&Controller::onIgnChanged, this, _1));
+		//d.connect(IM_ISCONNECTED, bind(&Controller::onIsConnected, this, _1));
 		d.connect(IM_CHANGESTATUS, bind(&Controller::onChangeStatus, this, _1));
 
 		//API
@@ -77,17 +78,16 @@ namespace GG {
 		c.setColumn(tableConfig, CFG::useSSL, ctypeInt, 0, "GG/useSSL");
 		c.setColumn(tableConfig, CFG::resumeDisconnected, ctypeInt, 1, "GG/resumeDisconnected");
 	}
-	
+
 	void Controller::onStart(IMEvent &ev) {
 		this->statusDescription = GETSTR(CFG::description);
 	}
-	
+
 	void Controller::onPrepareUI(IMEvent &ev) {
 		//Ikony
-		//TODO: Nie rejestruj¹ siê; czemu?
 		IconRegister(IML_16, ICO::logo, Ctrl->hDll(), IDI_LOGO);
 		IconRegister(IML_16, ICO::server, Ctrl->hDll(), IDI_SERVER);
-		IconRegister(IML_16, ICO::overlay, Ctrl->hDll(), IDI_OVERLAY);
+		IconRegister(IML_ICO, ICO::overlay, Ctrl->hDll(), IDI_OVERLAY);
 		IconRegister(IML_16, ICO::online, Ctrl->hDll(), IDI_ONLINE);
 		IconRegister(IML_16, ICO::away, Ctrl->hDll(), IDI_AWAY);
 		IconRegister(IML_16, ICO::invisible, Ctrl->hDll(), IDI_INVISIBLE);
@@ -98,11 +98,11 @@ namespace GG {
 		//Konfiguracja
 		UIGroupAdd(IMIG_CFG_USER, CFG::group, 0, "GG", ICO::logo);
 		UIActionCfgAddPluginInfoBox2(CFG::group,
-			"<div>Wtyczka umo¿liwia komunikacjê przy pomocy najpopularniejszego protoko³u w Polsce."
-			, "Wykorzystano bibliotekê <b>LibGadu</b> (http://toxygen.net/libgadu/)<br/>"
-			"Strona domowa protoko³u GG - http://www.gadu-gadu.pl/<br/>"
-			"<span class='note'>Skompilowano: <b>" __DATE__ "</b> [<b>" __TIME__ "</b>]</span><br/>"
-			"<br/>Copyright © 2003-2008 <b>Stamina</b>"
+			"Wtyczka umo¿liwia komunikacjê przy pomocy najpopularniejszego protoko³u w Polsce."
+			, "U¿yto biblioteki <b>libgadu</b> - http://toxygen.net/libgadu/<br/>"
+			"Modyfikacje - <b>Micha³ \"Dulek\" Dulko</b><br/>"
+			"Copyright © 2003-2008 <b>Stamina</b><br/><br/>"
+			"<span class='note'>Skompilowano: <b>" __DATE__ "</b> [<b>" __TIME__ "</b>]</span>"
 			, ("reg://IML16/" + inttostr(ICO::logo) + ".ico").c_str(), -3
 		);
 
@@ -121,7 +121,8 @@ namespace GG {
 		UIActionAdd(CFG::group, 0, ACTT_GROUPEND, "");
 
 		UIActionAdd(CFG::group, 0, ACTT_GROUP, "Ustawienia");
-		UIActionAdd(CFG::group, IMIB_CFG, ACTT_COMBO | ACTSCOMBO_LIST | ACTSC_INLINE,
+		UIActionAdd(CFG::group, 0, ACTT_COMMENT | ACTSC_INLINE, "Status startowy");
+		UIActionAdd(CFG::group, IMIB_CFG, ACTT_COMBO | ACTSCOMBO_LIST,
 			"Ostatni" CFGICO "#74" CFGVALUE "0\n"
 			"Niedostêpny" CFGICO "0x40A00000" CFGVALUE "1\n"
 			"Dostêpny" CFGICO "0x40A00400" CFGVALUE "2\n"
@@ -130,10 +131,9 @@ namespace GG {
 			AP_PARAMS AP_TIP "Status, który zostanie ustawiony po uruchomieniu programu", 
 			CFG::startStatus
 		);
-		//UIActionAdd(CFG::group, 0, ACTT_COMMENT, "Status startowy");
 		UIActionAdd(CFG::group, CFG::useSSL, ACTT_CHECK, "U¿ywaj bezpiecznego po³¹czenia (SSL)", CFG::useSSL);
-		UIActionAdd(CFG::group, CFG::friendsOnly, ACTT_CHECK, "Mój status widoczny tylko u znajomych z mojej listy", CFG::friendsOnly);
-		UIActionAdd(CFG::group, CFG::resumeDisconnected, ACTT_CHECK, "£¹cz ponownie je¿eli serwer zakoñczy po³¹czenie." AP_TIP "Wy³¹cz t¹ opcjê, je¿eli czêsto korzystasz z konta w ró¿nych miejscach. Zapobiega cyklicznemu \"prze³¹czaniu\" pomiêdzy w³¹czonymi programami.", CFG::resumeDisconnected);
+		UIActionAdd(CFG::group, CFG::friendsOnly, ACTT_CHECK, "Mój status widoczny tylko u znajomych z listy kontaktów", CFG::friendsOnly);
+		UIActionAdd(CFG::group, CFG::resumeDisconnected, ACTT_CHECK, "£¹cz ponownie, je¿eli serwer zakoñczy po³¹czenie." AP_TIP "Wy³¹cz t¹ opcjê, je¿eli czêsto korzystasz z konta w ró¿nych miejscach. Zapobiega cyklicznemu \"prze³¹czaniu\" pomiêdzy w³¹czonymi programami.", CFG::resumeDisconnected);
 		UIActionAdd(CFG::group, 0, ACTT_GROUPEND);
 
 		UIActionAdd(CFG::group, 0, ACTT_GROUP, "Serwery");
@@ -163,14 +163,22 @@ namespace GG {
 
 		ev.setSuccess();
 	}
-	
+
 	void Controller::onChangeStatus(IMEvent &ev) {
 		if (!isConnected())
 			connect(ev.getP1(), (char*)ev.getP2());
 		else
 			setStatus(ev.getP1(), (char*)ev.getP2());
 	}
+
+	void Controller::onGetStatus(IMEvent &ev) {
+    ev.setReturnValue(status);
+	}
 	
+	void Controller::onGetStatusInfo(IMEvent &ev) {
+		ev.setReturnValue(strcpy((char*)Ctrl->GetTempBuffer(statusDescription.size() + 1), statusDescription.c_str()));
+	}
+
 	void Controller::handleSetDefaultServers(Konnekt::ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION))
 			UIActionCfgSetValue(sUIAction(CFG::group, CFG::servers), GG::defaultServers);
@@ -214,7 +222,7 @@ namespace GG {
 			sde.info = "Podaj opis.";
 			if (!ICMessage(IMI_DLGENTER, (int)&sde))
 				return;
-			//TODO: Net::gg, z tym bêd¹ cyrki ;)
+			//todo: Net::gg, z tym bêd¹ cyrki. ;)
 			IMessage(IM_CHANGESTATUS, Net::gg, imtProtocol, -1, (int)sde.value);
 			SETSTR(CFG::description, sde.value);
 		}
@@ -354,7 +362,7 @@ namespace GG {
 			this->status = status;
 			this->statusDescription = description;
 
-			//debug: do usuniêcia, co ciekawe - nie wysy³a;
+			//debug: Do usuniêcia, co ciekawe - nie wysy³a.
 			gg_send_message(session, GG_CLASS_CHAT, 1169042, (const unsigned char*)"Czeœæ!");
 
 			return connected = true;

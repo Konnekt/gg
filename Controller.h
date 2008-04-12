@@ -15,6 +15,16 @@ namespace GG {
 			ccServer = 4,
 			ccData = 8
 		};
+		
+		struct statusInfo {
+			tStatus status;
+			const char* description;
+			
+			statusInfo(tStatus status, const char* description = "") {
+				this->status = status;
+				this->description = description;
+			}
+		};
 
 	protected:
 		Controller();
@@ -76,10 +86,13 @@ namespace GG {
 		void setProxy();
 		string getPassword();
 		bool checkConnection(unsigned short criterion = ccInternet | ccServer, bool warnUser = true);
-		bool connect(tStatus status, const char* description = "");
+		void connect(tStatus status, const char* description = "");
 		void setStatus(tStatus status, const char* description = "");
 		void sendMessage();
 		void disconnect(const char* description = "");
+
+	public:
+		static unsigned __stdcall connectProc(LPVOID param);
 
 	protected:
 		//zmienne wewnêtrzne

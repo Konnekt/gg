@@ -55,7 +55,7 @@ namespace GG {
 		ICMessage(IMC_RESTORECURDIR);
 		string filename = (string)(char*)ICMessage(IMC_TEMPDIR) + "\\gg_token.gif";
 		ofstream file(filename.c_str(), ios_base::out | ios_base::trunc | ios_base::binary);
-		//file.write(http->body, http->body_size);
+		file.write(http->body, http->body_size);
 		if (file.fail()) {
 			ICMessage(IMI_ERROR, (int)"Wyst¹pi³ b³¹d podczas zapisywania tokena.");
 			file.close();
@@ -75,7 +75,7 @@ namespace GG {
 	}
 
 	//todo: Poni¿sze funkcje mog¹ informowaæ rodzajach b³êdów (te informacje s¹ w logach, pewnie da siê je wyci¹gn¹æ).
-	unsigned int __stdcall createGGAccount(LPVOID lParam) {
+	unsigned __stdcall createGGAccount(LPVOID lParam) {
 		if (ICMessage(IMI_CONFIRM, (int)"Zostanie za³o¿one nowe konto w sieci Gadu-Gadu™.\nKontynuowaæ?", MB_TASKMODAL | MB_YESNO) == IDNO) 
 			return 0;
 
@@ -137,7 +137,7 @@ namespace GG {
 		return 0;
 	}
 
-	unsigned int __stdcall removeGGAccount (LPVOID lParam) {
+	unsigned __stdcall removeGGAccount (LPVOID lParam) {
 		if (ICMessage(IMI_CONFIRM, (int)"Twoje konto na gadu-gadu zostanie usuniête!\nKontynuowaæ?", MB_TASKMODAL | MB_YESNO) == IDNO) 
 			return 0;
 
@@ -196,7 +196,7 @@ namespace GG {
 		return 0;
 	}
 
-	unsigned int __stdcall changePassword(LPVOID lParam) {
+	unsigned __stdcall changePassword(LPVOID lParam) {
 		if (ICMessage(IMI_CONFIRM, (int)"Czy na pewno chcesz zmieniæ has³o?", MB_TASKMODAL | MB_YESNO) == IDNO)
 			return 0;
 
@@ -266,7 +266,7 @@ namespace GG {
 		return 0;
 	}
 
-	unsigned int __stdcall remindPassword(LPVOID lParam) {
+	unsigned __stdcall remindPassword(LPVOID lParam) {
 		sDIALOG_enter sde;
 		sde.title = "GG - przypomnienie has³a [1/2]";
 		sde.info = "Podaj adres email, który wpisa³eœ podczas zak³adania konta. Na ten email otrzymasz has³o.";

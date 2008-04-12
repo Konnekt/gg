@@ -39,7 +39,7 @@ namespace GG {
 		d.connect(IM_GET_STATUS, bind(&Controller::onGetStatus, this, _1));
 		d.connect(IM_GET_STATUSINFO, bind(&Controller::onGetStatusInfo, this, _1));
 		//d.connect(IM_GET_UID, bind(&Controller::onGetUID, this, _1));
-		//todo: Pamiêtaæ, ¿e zamiast IM_MSG_RCV i IM_MSG_SEND jest nowa MQ
+		//todo: Pamiêtaæ, ¿e zamiast IM_MSG_RCV i IM_MSG_SEND jest nowa MQ.
 		//d.connect(IM_CNT_ADD, bind(&Controller::onCntAdd, this, _1));
 		//d.connect(IM_CNT_REMOVE, bind(&Controller::onCntRemove, this, _1));
 		//d.connect(IM_CNT_CHANGED, bind(&Controller::onCntChanged, this, _1));
@@ -165,10 +165,7 @@ namespace GG {
 	}
 
 	void Controller::onChangeStatus(IMEvent &ev) {
-		if (!isConnected())
-			connect(ev.getP1(), (char*)ev.getP2());
-		else
-			setStatus(ev.getP1(), (char*)ev.getP2());
+		setStatus(ev.getP1(), (char*)ev.getP2());
 	}
 
 	void Controller::onGetStatus(IMEvent &ev) {
@@ -248,7 +245,7 @@ namespace GG {
 
 	void Controller::handleStatusOffline(Konnekt::ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION)) {
-			disconnect(statusDescription.c_str());
+			IMessage(IM_CHANGESTATUS, Net::gg, imtProtocol, ST_OFFLINE, (int)statusDescription.c_str());
 		}	
 	}
 
@@ -322,23 +319,63 @@ namespace GG {
 		return true;
 	}
 
-	bool Controller::connect(tStatus status, const char* description) {
-		if (isConnected() || this->status != ST_OFFLINE)
-			return false;
-		if (!checkConnection(ccInternet | ccData))
+	void Controller::connect(tStatus status, const char* description) {
+		//otwieramy w¹tek;
+		CloseHandle(Ctrl->BeginThread("Connect", 0, 0, connectProc, (void*)(new statusInfo(status, description)), 0, 0));
+	}
+
+	void Controller::setStatus(tStatus status, const char* description) {
+		if (!isConnected()) {
+			return connect(status, description);
+		} else if (status == ST_OFFLINE)
+			return disconnect(description);
+
+		PlugStatusChange(status, description);
+
+		string setDescription = description ? description : statusDescription.c_str();
+		int setStatus = convertKStatus(status, setDescription.c_str()) | GETINT(CFG::friendsOnly) ? GG_STATUS_FRIENDS_MASK : 0;
+		gg_change_status_descr(session, setStatus, setDescription.c_str());
+
+		this->status = status;
+		this->statusDescription = description;
+	}
+
+	void Controller::disconnect(const char* description) {
+		if (!isConnected())
+			return;
+		PlugStatusChange(ST_OFFLINE, description);
+
+		string setDescription = description ? description : statusDescription.c_str();
+		int setStatus = description ? GG_STATUS_NOT_AVAIL_DESCR : GG_STATUS_NOT_AVAIL;
+		gg_change_status_descr(session, setStatus, setDescription.c_str());
+
+		gg_logoff(session);
+		gg_free_session(session);
+		connected = false;
+		this->statusDescription = "";
+		session = 0;
+	}
+
+	unsigned __stdcall Controller::connectProc(LPVOID lParam) {
+		Controller* c = Singleton<Controller>::getInstance();
+		tStatus status = ((statusInfo*)lParam)->status;
+		const char* description = ((statusInfo*)lParam)->description;
+		delete lParam;
+
+		if (c->isConnected() || status == ST_OFFLINE || !c->checkConnection(ccInternet | ccData))
 			return false;
 
 		PlugStatusChange(ST_CONNECTING);
-		this->status = ST_CONNECTING;
+		c->status = ST_CONNECTING;
 
 		gg_login_params params;
 		memset(&params, 0, sizeof(params));
 		params.uin = atoi(GETSTR(CFG::login));
-		string password = getPassword();
+		string password = c->getPassword();
 		if (password.empty()) {
 			PlugStatusChange(ST_OFFLINE);
-			this->status = ST_OFFLINE;
-			this->statusDescription = "";
+			c->status = ST_OFFLINE;
+			c->statusDescription = "";
 			return false;
 		}
 		params.password = (char*)password.c_str();
@@ -356,43 +393,35 @@ namespace GG {
 			memcpy(&params.server_addr, host->h_addr, 4);
 		}*/
 
-		session = gg_login(&params);
-		if (session) {
+		do {
+			//todo: Tu mo¿emy sobie zmieniaæ serwery.
+			c->getCtrl()->Sleep(1000);
+			c->session = gg_login(&params);
+		} while (!c->session);
+
+		if (c->session) {
 			PlugStatusChange(status, description);
-			this->status = status;
-			this->statusDescription = description;
+			c->status = status;
+			c->statusDescription = description;
 
 			//debug: Do usuniêcia, co ciekawe - nie wysy³a.
-			gg_send_message(session, GG_CLASS_CHAT, 1169042, (const unsigned char*)"Czeœæ!");
+			gg_send_message(c->session, GG_CLASS_CHAT, 1169042, (const unsigned char*)"Czeœæ!");
+			
+			gg_event* event;
 
-			return connected = true;
+			while (event = gg_watch_fd(c->session)) {
+        switch (event->type) {
+					case GG_EVENT_CONN_SUCCESS: {
+						MessageBox(0, "Po³¹czono", 0, 0);
+						break;
+					} case GG_EVENT_CONN_FAILED:
+						MessageBox(0, "Nie po³¹czono", 0, 0);
+						gg_free_session(c->session);
+						break;
+        }
+				gg_event_free(event);
+			}
+			return c->connected = true;
 		}
-		else {
-			PlugStatusChange(ST_OFFLINE);
-			this->status = ST_OFFLINE;
-			this->statusDescription = "";
-			return false;
-		}
-	}
-
-	void Controller::setStatus(tStatus status, const char* description) {
-		PlugStatusChange(status, description);
-
-		string setDescription = description ? description : statusDescription.c_str();
-		int setStatus = convertKStatus(status, setDescription.c_str()) | GETINT(CFG::friendsOnly) ? GG_STATUS_FRIENDS_MASK : 0;
-		gg_change_status_descr(session, setStatus, setDescription.c_str());
-
-		this->status = status;
-		this->statusDescription = description;
-	}
-
-	void Controller::disconnect(const char* description) {
-		if (!isConnected())
-			return;
-		setStatus(ST_OFFLINE, description);
-		gg_logoff(session);
-		gg_free_session(session);
-		connected = false;
-		this->statusDescription = "";
 	}
 }

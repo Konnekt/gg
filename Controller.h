@@ -34,6 +34,7 @@ namespace GG {
 		void onPrepareUI(IMEvent& ev);
 		void onStart(IMEvent& ev);
 		void onEnd(IMEvent& ev);
+		void onBeforeEnd(IMEvent& ev);
 		void onDisconnect(IMEvent& ev);
 		void onGetStatus(IMEvent& ev);
 		void onGetStatusInfo(IMEvent& ev);
@@ -97,9 +98,11 @@ namespace GG {
 	protected:
 		//zmienne wewnêtrzne
 		bool connected;
+		bool connecting;
 		tStatus status;
 		string statusDescription;
 		gg_session* session;
+		HANDLE connectThread;
 
 	public:
 		//zmienne zewnêtrzne

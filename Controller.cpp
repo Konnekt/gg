@@ -13,7 +13,7 @@ namespace GG {
 		delete [] buff;
 	}
 
-	Controller::Controller() : connected(false), status(ST_OFFLINE), session(0) {
+	Controller::Controller() : connected(false), connecting(false), status(ST_OFFLINE), session(0), connectThread(0) {
 		gg_debug_level = GG_DEBUG_MISC;
 		gg_debug_handler = &handler;
 		IMessageDispatcher& d = getIMessageDispatcher();
@@ -34,6 +34,7 @@ namespace GG {
 		//IMessage
 		d.connect(IM_UI_PREPARE, bind(&Controller::onPrepareUI, this, _1));
 		d.connect(IM_START, bind(&Controller::onStart, this, _1));
+		d.connect(IM_BEFOREEND, bind(&Controller::onBeforeEnd, this, _1));
 		//d.connect(IM_END, bind(&Controller::onEnd, this, _1));
 		//d.connect(IM_DISCONNECT, bind(&Controller::onDisconnect, this, _1));
 		d.connect(IM_GET_STATUS, bind(&Controller::onGetStatus, this, _1));
@@ -162,6 +163,18 @@ namespace GG {
 		UIActionAdd(ACT::status, ACT::statusOffline, 0, "Niedostêpny", ICO::offline);
 
 		ev.setSuccess();
+	}
+	
+	void Controller::onBeforeEnd(IMEvent &ev) {
+		if (connecting) {
+			connecting = false;
+			for (unsigned i = 0; i < 5; ++i) {
+				WaitForSingleObject(connectThread, 500);
+				getCtrl()->WMProcess();
+				return;
+			}
+			TerminateThread(connectThread, 0);
+		}
 	}
 
 	void Controller::onChangeStatus(IMEvent &ev) {
@@ -320,15 +333,19 @@ namespace GG {
 	}
 
 	void Controller::connect(tStatus status, const char* description) {
-		//otwieramy w¹tek;
-		CloseHandle(Ctrl->BeginThread("Connect", 0, 0, connectProc, (void*)(new statusInfo(status, description)), 0, 0));
+		connecting = true;
+		connectThread = Ctrl->BeginThread("Connect", 0, 0, connectProc, (void*)(new statusInfo(status, description)), 0, 0);
 	}
 
 	void Controller::setStatus(tStatus status, const char* description) {
-		if (!isConnected()) {
+		if (!isConnected() && !connecting) {
 			return connect(status, description);
-		} else if (status == ST_OFFLINE)
+		} else if (connecting && status == ST_OFFLINE) {
+			connecting = false;
+			return;
+		} else if (status == ST_OFFLINE) {
 			return disconnect(description);
+		}
 
 		PlugStatusChange(status, description);
 
@@ -376,6 +393,8 @@ namespace GG {
 			PlugStatusChange(ST_OFFLINE);
 			c->status = ST_OFFLINE;
 			c->statusDescription = "";
+			c->connected = false;
+			c->connecting = false;
 			return false;
 		}
 		params.password = (char*)password.c_str();
@@ -397,7 +416,8 @@ namespace GG {
 			//todo: Tu mo¿emy sobie zmieniaæ serwery.
 			c->getCtrl()->Sleep(1000);
 			c->session = gg_login(&params);
-		} while (!c->session);
+			//todo: Sprawdzamy jeszcze czy nie by³o IM_BEFOREEND i czy nie zmieniano statusu na OFFLINE
+		} while (!c->session && c->connecting);
 
 		if (c->session) {
 			PlugStatusChange(status, description);
@@ -409,7 +429,7 @@ namespace GG {
 			
 			gg_event* event;
 
-			while (event = gg_watch_fd(c->session)) {
+			/*while (event = gg_watch_fd(c->session)) {
         switch (event->type) {
 					case GG_EVENT_CONN_SUCCESS: {
 						MessageBox(0, "Po³¹czono", 0, 0);
@@ -420,8 +440,17 @@ namespace GG {
 						break;
         }
 				gg_event_free(event);
-			}
-			return c->connected = true;
+			}*/
+			c->connecting = false;
+			c->connected = true;
+			return true;
+		} else {
+			PlugStatusChange(ST_OFFLINE);
+			c->status = ST_OFFLINE;
+			c->statusDescription = "";
+			c->connecting = false;
+			c->connected = false;
+			return false;
 		}
 	}
 }

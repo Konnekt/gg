@@ -48,8 +48,8 @@
 
 //Libgadu
 //todo: W tym s¹ makra podmieniaj¹ce write/send. Nie pozwala na u¿ywanie tej f-cji - to idiotyzm! Trzeba obejœæ.
-#include <libgadu/compat_w32.h>
-#include <libgadu/libgadu/include/libgadu.h>
+#include <libgadu/compat.h>
+#include <libgadu/libgadu.h>
 
 // nag³ówki boosta
 #include <boost/signal.hpp>
@@ -72,6 +72,7 @@
 #include <stamina/Timer.h>
 #include <stamina/RegEx.h>
 #include <stamina/SimXML.h>
+#include <stamina/ThreadRun.h>
 
 using namespace Stamina;
 using namespace std;

@@ -16,7 +16,7 @@ namespace GG {
 			ccData = 8
 		};
 		
-		struct statusInfo {
+		/*struct statusInfo {
 			tStatus status;
 			const char* description;
 			
@@ -24,7 +24,7 @@ namespace GG {
 				this->status = status;
 				this->description = description;
 			}
-		};
+		};*/
 
 	protected:
 		Controller();
@@ -102,6 +102,7 @@ namespace GG {
 		tStatus status;
 		string statusDescription;
 		gg_session* session;
+		ThreadRunner threads;
 		HANDLE connectThread;
 
 	public:

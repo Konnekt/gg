@@ -16,15 +16,7 @@ namespace GG {
 			ccData = 8
 		};
 		
-		/*struct statusInfo {
-			tStatus status;
-			const char* description;
-			
-			statusInfo(tStatus status, const char* description = "") {
-				this->status = status;
-				this->description = description;
-			}
-		};*/
+		typedef pair<tStatus, string> statusInfo;
 
 	protected:
 		Controller();

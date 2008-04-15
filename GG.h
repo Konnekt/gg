@@ -10,7 +10,7 @@ namespace GG {
 	const int sig = (int)"GG"; //sygnatura
 	const int name = (int)"Gadu-Gadu"; //nazwa
 	
-	const char defaultServers[] = "s1.gadu-gadu.pl\r\n\r\n217.17.41.83\r\n217.17.41.84\r\n217.17.41.85\r\n217.17.41.86\r\n217.17.41.87\r\n217.17.41.88\r\n217.17.41.92";
+	const char defaultServers[] = "\r\n91.197.13.17\r\n91.197.13.2\r\n\91.197.13.28\r\n91.197.13.26\r\.197.13.18\r\n91.197.13.12\r\n91.197.13.27\r\n91.197.13.24\r\n91.197.13.13\r\n91.197.13.29\r\n91.197.13.21\r\n91.197.13.25\r\n91.197.13.20\r\n91.197.13.32\r\n91.197.13.31\r\n91.197.13.33\r\n91.197.13.19\r\n91.197.13.49";
 
 	namespace CFG {
 		const unsigned group = net * 1000;
@@ -24,7 +24,7 @@ namespace GG {
 		const unsigned choosenServer = group + 8;
 		const unsigned useSSL = group + 9;
 		const unsigned resumeDisconnected = group + 10;
-		
+
 		/* todo: Stare id kolumn; zapewne przydadz¹ siê przy pisaniu f-cji updatuj¹cej plugin.
 		const unsigned login = 1053;
 		const unsigned password = 1054;
@@ -38,7 +38,7 @@ namespace GG {
 		const unsigned useSSL = 1063;
 		const unsigned resumeDisconnected = 1064;*/
 	};
-	
+
 	namespace ACT {
 		const unsigned setDefaultServers = net * 1000 + 200;
 		const unsigned createGGAccount = net * 1000 + 201;
@@ -57,7 +57,7 @@ namespace GG {
 		const unsigned statusInvisible = net * 1000 + 213;
 		const unsigned statusOffline = net * 1000 + 214;
 	};
-	
+
 	namespace ICO {
 		const unsigned server = net * 1000 + 300;
 		const unsigned logo = UIIcon(IT_LOGO, net, 0, 0);

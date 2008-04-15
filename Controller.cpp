@@ -35,7 +35,7 @@ namespace GG {
 		d.connect(IM_UI_PREPARE, bind(&Controller::onPrepareUI, this, _1));
 		d.connect(IM_START, bind(&Controller::onStart, this, _1));
 		d.connect(IM_BEFOREEND, bind(&Controller::onBeforeEnd, this, _1));
-		//d.connect(IM_END, bind(&Controller::onEnd, this, _1));
+		d.connect(IM_END, bind(&Controller::onEnd, this, _1));
 		//d.connect(IM_DISCONNECT, bind(&Controller::onDisconnect, this, _1));
 		d.connect(IM_GET_STATUS, bind(&Controller::onGetStatus, this, _1));
 		d.connect(IM_GET_STATUSINFO, bind(&Controller::onGetStatusInfo, this, _1));
@@ -138,7 +138,7 @@ namespace GG {
 		UIActionAdd(CFG::group, 0, ACTT_GROUPEND);
 
 		UIActionAdd(CFG::group, 0, ACTT_GROUP, "Serwery");
-		UIActionAdd(CFG::group, CFG::servers, ACTT_TEXT | ACTSC_INLINE, "" CFGTIP "Je¿eli zostawisz to pole puste - zostanie u¿yty serwer wskazany przez hub GG.", CFG::servers, 150);
+		UIActionAdd(CFG::group, CFG::servers, ACTT_TEXT | ACTSC_INLINE | ACTR_SAVE, "" CFGTIP "Je¿eli zostawisz to pole puste - zostanie u¿yty serwer wskazany przez hub GG.", CFG::servers, 150);
 		UIActionAdd(CFG::group, 0, ACTT_TIPBUTTON | ACTSC_INLINE, AP_TIPRICH "W ka¿dej linijce jeden serwer. Pusta linijka oznacza HUB (system zwracaj¹cy najmniej obci¹¿ony serwer)."
 			"<br/><b>Format</b> (zawartoœæ [...] jest opcjonalna):"
 			"<br/><i>Adres</i>[:<i>port</i>]"
@@ -161,6 +161,8 @@ namespace GG {
 		UIActionAdd(ACT::status, ACT::statusAway, 0, "Zaraz wracam", ICO::away);
 		UIActionAdd(ACT::status, ACT::statusInvisible, 0, "Ukryty", ICO::invisible);
 		UIActionAdd(ACT::status, ACT::statusOffline, 0, "Niedostêpny", ICO::offline);
+		
+		//todo: Dodajemy listê serwerów (dynamiczna tablica? pewnie tak…).
 
 		ev.setSuccess();
 	}
@@ -169,12 +171,21 @@ namespace GG {
 		if (connecting) {
 			connecting = false;
 			for (unsigned i = 0; i < 5; ++i) {
-				WaitForSingleObject(connectThread, 500);
-				getCtrl()->WMProcess();
-				return;
+				if (WaitForSingleObject(connectThread, 500) != WAIT_OBJECT_0) {
+					getCtrl()->WMProcess();
+					continue;
+				} else {
+					CloseHandle(connectThread);
+					return;
+				}
 			}
 			TerminateThread(connectThread, 0);
+			CloseHandle(connectThread);
 		}
+	}
+
+	void Controller::onEnd(IMEvent &ev) {
+		setStatus(ST_OFFLINE, 0);
 	}
 
 	void Controller::onChangeStatus(IMEvent &ev) {
@@ -184,42 +195,48 @@ namespace GG {
 	void Controller::onGetStatus(IMEvent &ev) {
     ev.setReturnValue(status);
 	}
-	
+
 	void Controller::onGetStatusInfo(IMEvent &ev) {
-		ev.setReturnValue(statusDescription.c_str());
+		ev.setReturnValue(statusDescription);
 	}
 
-	void Controller::handleSetDefaultServers(Konnekt::ActionEvent &ev) {
+	void Controller::handleSetDefaultServers(ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION))
 			UIActionCfgSetValue(sUIAction(CFG::group, CFG::servers), GG::defaultServers);
 	}
+	
+	void Controller::handleServersField(ActionEvent &ev) {
+		if (ev.withCode(ACTN_SAVE)) {
+			//todo: Tu aktualizujemy listê serwerów.
+		}
+	}
 
-	void Controller::handleCreateGGAccount(Konnekt::ActionEvent &ev) {
+	void Controller::handleCreateGGAccount(ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION))
 			threads.runEx(createGGAccount, 0, "CreateGGAccount");
 	}
 
-	void Controller::handleRemoveGGAccount(Konnekt::ActionEvent &ev) {
+	void Controller::handleRemoveGGAccount(ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION))
 			threads.runEx(removeGGAccount, 0, "RemoveGGAccount");
 	}
 	
-	void Controller::handleChangePassword(Konnekt::ActionEvent &ev) {
+	void Controller::handleChangePassword(ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION))
 			threads.runEx(changePassword, 0, "ChangePassword");
 	}
 
-	void Controller::handleRemindPassword(Konnekt::ActionEvent &ev) {
+	void Controller::handleRemindPassword(ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION))
 			threads.runEx(remindPassword, 0, "RemindPassword");
 	}
 
-	void Controller::handleImportCntList(Konnekt::ActionEvent &ev) {
+	void Controller::handleImportCntList(ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION))
 			importList();
 	}
 
-	void Controller::handleExportCntList(Konnekt::ActionEvent &ev) {
+	void Controller::handleExportCntList(ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION))
 			exportList();
 	}
@@ -238,25 +255,25 @@ namespace GG {
 		}
 	}
 
-	void Controller::handleStatusOnline(Konnekt::ActionEvent &ev) {
+	void Controller::handleStatusOnline(ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION)) {
 			IMessage(IM_CHANGESTATUS, Net::gg, imtProtocol, ST_ONLINE, isConnected() ? 0 : (int)GETSTR(CFG::description));
 		}	
 	}
 
-	void Controller::handleStatusAway(Konnekt::ActionEvent &ev) {
+	void Controller::handleStatusAway(ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION)) {
 			IMessage(IM_CHANGESTATUS, Net::gg, imtProtocol, ST_AWAY, isConnected() ? 0 : (int)GETSTR(CFG::description));
 		}
 	}
 
-	void Controller::handleStatusInvisible(Konnekt::ActionEvent &ev) {
+	void Controller::handleStatusInvisible(ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION)) {
 			IMessage(IM_CHANGESTATUS, Net::gg, imtProtocol, ST_HIDDEN, isConnected() ? 0 : (int)GETSTR(CFG::description));
 		}	
 	}
 
-	void Controller::handleStatusOffline(Konnekt::ActionEvent &ev) {
+	void Controller::handleStatusOffline(ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION)) {
 			IMessage(IM_CHANGESTATUS, Net::gg, imtProtocol, ST_OFFLINE, 0);
 		}	
@@ -334,49 +351,13 @@ namespace GG {
 
 	void Controller::connect(tStatus status, const char* description) {
 		connecting = true;
-		connectThread = threads.runEx(connectProc, (void*)(new pair<tStatus, string>(status, description)), "Connect");
-	}
-
-	void Controller::setStatus(tStatus status, const char* description) {
-		if (!isConnected() && !connecting) {
-			return connect(status, description);
-		} else if (connecting && status == ST_OFFLINE) {
-			connecting = false;
-			return;
-		} else if (status == ST_OFFLINE) {
-			return disconnect(description);
-		}
-
-		string setDescription = description ? description : statusDescription;
-		int setStatus = status == -1 ? convertKStatus(this->status, setDescription) : convertKStatus(status, setDescription);
-		PlugStatusChange(status == -1 ? this->status : status, setDescription.c_str());
-		gg_change_status_descr(session, setStatus, setDescription.c_str());
-
-		this->status = status == -1 ? this->status : status;
-		this->statusDescription = setDescription;
-	}
-
-	void Controller::disconnect(const char* description) {
-		if (!isConnected())
-			return;
-
-		string setDescription = description ? description : statusDescription.c_str();
-		int setStatus = !setDescription.empty() ? GG_STATUS_NOT_AVAIL_DESCR : GG_STATUS_NOT_AVAIL;
-		PlugStatusChange(ST_OFFLINE, setDescription.c_str());
-		gg_change_status_descr(session, setStatus, setDescription.c_str());
-
-		gg_logoff(session);
-		gg_free_session(session);
-		connected = false;
-		this->status = ST_OFFLINE;
-		this->statusDescription = setDescription.c_str();
-		session = 0;
+		connectThread = threads.runEx(connectProc, (void*)(new statusInfo(status, description)), "Connect");
 	}
 
 	unsigned __stdcall Controller::connectProc(LPVOID lParam) {
 		Controller* c = Singleton<Controller>::getInstance();
-		tStatus status = ((pair<tStatus, string>*)lParam)->first;
-		string description = ((pair<tStatus, string>*)lParam)->second;
+		tStatus status = ((statusInfo*)lParam)->first;
+		string description = ((statusInfo*)lParam)->second;
 		delete lParam;
 
 		IMLOG("[connectProc]: %i, %s", status, description.c_str());
@@ -400,8 +381,8 @@ namespace GG {
 			return false;
 		}
 		params.password = (char*)password.c_str();
-		//params.status = convertKStatus(status, description);
-		//params.status_descr = (char*)description;
+		params.status = convertKStatus(status, description);
+		params.status_descr = (char*)description.c_str();
 		params.async = false;
 		params.client_version = GG_DEFAULT_CLIENT_VERSION;
 		params.protocol_version = GG_DEFAULT_PROTOCOL_VERSION;
@@ -414,11 +395,12 @@ namespace GG {
 			memcpy(&params.server_addr, host->h_addr, 4);
 		}*/
 
-		do {
+		c->session = gg_login(&params);
+		while (!c->session && c->connecting) {
 			//todo: Tu mo¿emy sobie zmieniaæ serwery.
-			//c->getCtrl()->Sleep(1000);
+			c->getCtrl()->Sleep(1000);
 			c->session = gg_login(&params);
-		} while (!c->session && c->connecting);
+		}
 
 		if (c->session) {
 			PlugStatusChange(status, description.c_str());
@@ -431,6 +413,7 @@ namespace GG {
 
 			/*gg_event* event;
 			while (event = gg_watch_fd(c->session)) {
+				IMLOG("%p", event);
 				switch (event->type) {
 					case GG_EVENT_CONN_SUCCESS: {
 						IMLOG("Uda³o siê?");
@@ -454,5 +437,41 @@ namespace GG {
 			c->connected = false;
 			return false;
 		}
+	}
+
+	void Controller::setStatus(tStatus status, const char* description) {
+		if (!isConnected() && !connecting && status != ST_OFFLINE) {
+			return connect(status, description);
+		} else if (connecting && status == ST_OFFLINE) {
+			connecting = false;
+			return;
+		} else if (status == ST_OFFLINE) {
+			return disconnect(description);
+		}
+
+		string setDescription = description ? description : statusDescription;
+		int setStatus = status == -1 ? convertKStatus(this->status, setDescription) : convertKStatus(status, setDescription);
+		PlugStatusChange(status == -1 ? this->status : status, setDescription.c_str());
+		gg_change_status_descr(session, setStatus, setDescription.c_str());
+
+		this->status = status == -1 ? this->status : status;
+		this->statusDescription = setDescription;
+	}
+
+	void Controller::disconnect(const char* description) {
+		if (!isConnected())
+			return;
+
+		string setDescription = description ? description : statusDescription.c_str();
+		int setStatus = setDescription.empty() ? GG_STATUS_NOT_AVAIL : GG_STATUS_NOT_AVAIL_DESCR;
+		PlugStatusChange(ST_OFFLINE, setDescription.c_str());
+		gg_change_status_descr(session, setStatus, setDescription.c_str());
+
+		gg_logoff(session);
+		gg_free_session(session);
+		connected = false;
+		this->status = ST_OFFLINE;
+		this->statusDescription = setDescription.c_str();
+		session = 0;
 	}
 }

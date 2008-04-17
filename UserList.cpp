@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "GG.h"
 #include "Controller.h"
+#include "Helpers.h"
+#include "Dialogs.h"
+#include "UserList.h"
 
 namespace GG {
 	/*void onUserlistReply(gg_event * e) {

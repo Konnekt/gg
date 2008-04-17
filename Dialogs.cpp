@@ -1,5 +1,8 @@
 #include "StdAfx.h"
 #include "Controller.h"
+#include "Helpers.h"
+#include "Dialogs.h"
+#include "UserList.h"
 
 namespace GG {
 	bool __stdcall GG::disconnectDialogCB(sDIALOG_long*sd) {

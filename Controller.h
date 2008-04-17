@@ -1,9 +1,6 @@
 #pragma once
 
 #include "GG.h"
-#include "Helpers.h"
-#include "Dialogs.h"
-#include "UserList.h"
 
 namespace GG {
 	class Controller : public iController {
@@ -16,7 +13,20 @@ namespace GG {
 			ccData = 8
 		};
 		
-		typedef pair<tStatus, string> statusInfo;
+		struct Server {
+			string ip;
+			bool selected;
+			bool ssl;
+			
+			Server (string ip = "", bool ssl = false, bool selected = false) {
+				this->ip = ip;
+				this->ssl = ssl;
+				this->selected = selected;
+			}
+		};
+		
+		typedef vector<Server> tServers;
+		typedef pair<tStatus, string> tStatusInfo;
 
 	protected:
 		Controller();
@@ -43,6 +53,7 @@ namespace GG {
 
 	public:
 		//akcje
+		void handleConfig(ActionEvent& ev);
 		void handleSetDefaultServers(ActionEvent& ev);
 		void handleCreateGGAccount(ActionEvent& ev);
 		void handleRemoveGGAccount(ActionEvent& ev);
@@ -51,6 +62,7 @@ namespace GG {
 		void handleImportCntList(ActionEvent& ev);
 		void handleExportCntList(ActionEvent& ev);
 		void handleStatusDescription(ActionEvent& ev);
+		void handleStatusServer(ActionEvent& ev);
 		void handleStatusOnline(ActionEvent& ev);
 		void handleStatusAway(ActionEvent& ev);
 		void handleStatusInvisible(ActionEvent& ev);
@@ -76,6 +88,7 @@ namespace GG {
 
 	public:
 		//f-cje
+		void refreshServers(string serversString);
 		void setProxy();
 		string getPassword();
 		bool checkConnection(unsigned short criterion = ccInternet | ccServer, bool warnUser = true);
@@ -96,6 +109,7 @@ namespace GG {
 		gg_session* session;
 		ThreadRunner threads;
 		HANDLE connectThread;
+		vector<Server> servers;
 
 	public:
 		//zmienne zewnêtrzne

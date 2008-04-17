@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include "Controller.h"
+#include "Helpers.h"
+#include "Dialogs.h"
+#include "UserList.h"
 
 namespace GG {
 	//debug: To tylko tymczasowe.
@@ -55,6 +58,7 @@ namespace GG {
 		//d.connect(api::isEnabled, bind(&Controller::apiEnabled, this, _1));
 
 		//Akcje
+		a.connect(CFG::group, bind(&Controller::handleConfig, this, _1));
 		a.connect(ACT::setDefaultServers, bind(&Controller::handleSetDefaultServers, this, _1));
 		a.connect(ACT::createGGAccount, bind(&Controller::handleCreateGGAccount, this, _1));
 		a.connect(ACT::removeGGAccount, bind(&Controller::handleRemoveGGAccount, this, _1));
@@ -63,6 +67,9 @@ namespace GG {
 		a.connect(ACT::importCntList, bind(&Controller::handleImportCntList, this, _1));
 		a.connect(ACT::exportCntList, bind(&Controller::handleExportCntList, this, _1));
 		a.connect(ACT::statusDescripton, bind(&Controller::handleStatusDescription, this, _1));
+		for (unsigned i = 0; i < serversCount; ++i) {
+			a.connect(ACT::statusServer + i, bind(&Controller::handleStatusServer, this, _1));
+		}
 		a.connect(ACT::statusOnline, bind(&Controller::handleStatusOnline, this, _1));
 		a.connect(ACT::statusAway, bind(&Controller::handleStatusAway, this, _1));
 		a.connect(ACT::statusInvisible, bind(&Controller::handleStatusInvisible, this, _1));
@@ -76,6 +83,7 @@ namespace GG {
 		c.setColumn(tableConfig, CFG::friendsOnly, ctypeInt, 0, "GG/friedsOnly");
 		c.setColumn(tableConfig, CFG::description, ctypeString, "", "GG/description");
 		c.setColumn(tableConfig, CFG::servers, ctypeString, GG::defaultServers, "GG/servers");
+		c.setColumn(tableConfig, CFG::selectedServer, ctypeString, "", "GG/servers");
 		c.setColumn(tableConfig, CFG::useSSL, ctypeInt, 0, "GG/useSSL");
 		c.setColumn(tableConfig, CFG::resumeDisconnected, ctypeInt, 1, "GG/resumeDisconnected");
 	}
@@ -97,7 +105,7 @@ namespace GG {
 		IconRegister(IML_16, ICO::connecting, Ctrl->hDll(), IDI_CONNECTING);
 
 		//Konfiguracja
-		UIGroupAdd(IMIG_CFG_USER, CFG::group, 0, "GG", ICO::logo);
+		UIGroupAdd(IMIG_CFG_USER, CFG::group, ACTR_SAVE, "GG", ICO::logo);
 		UIActionCfgAddPluginInfoBox2(CFG::group,
 			"Wtyczka umo¿liwia komunikacjê przy pomocy najpopularniejszego protoko³u w Polsce."
 			, "U¿yto biblioteki <b>libgadu</b> - http://toxygen.net/libgadu/<br/>"
@@ -138,7 +146,7 @@ namespace GG {
 		UIActionAdd(CFG::group, 0, ACTT_GROUPEND);
 
 		UIActionAdd(CFG::group, 0, ACTT_GROUP, "Serwery");
-		UIActionAdd(CFG::group, CFG::servers, ACTT_TEXT | ACTSC_INLINE | ACTR_SAVE, "" CFGTIP "Je¿eli zostawisz to pole puste - zostanie u¿yty serwer wskazany przez hub GG.", CFG::servers, 150);
+		UIActionAdd(CFG::group, CFG::servers, ACTT_TEXT | ACTSC_INLINE, "" CFGTIP "Je¿eli zostawisz to pole puste - zostanie u¿yty serwer wskazany przez hub GG.", CFG::servers, 150);
 		UIActionAdd(CFG::group, 0, ACTT_TIPBUTTON | ACTSC_INLINE, AP_TIPRICH "W ka¿dej linijce jeden serwer. Pusta linijka oznacza HUB (system zwracaj¹cy najmniej obci¹¿ony serwer)."
 			"<br/><b>Format</b> (zawartoœæ [...] jest opcjonalna):"
 			"<br/><i>Adres</i>[:<i>port</i>]"
@@ -156,13 +164,17 @@ namespace GG {
 
 		//zmiana statusu
 		UIGroupAdd(IMIG_STATUS, ACT::status, 0, "GG", ICO::offline);
+		UIGroupAdd(ACT::status, ACT::statusServers, 0, "Serwer", ICO::server);
+		for (unsigned i = 0; i < serversCount; ++i) {
+			UIActionAdd(ACT::statusServers, ACT::statusServer + i, ACTS_HIDDEN, "");
+		}
 		UIActionAdd(ACT::status, ACT::statusDescripton, 0, "Opis", 0);
 		UIActionAdd(ACT::status, ACT::statusOnline, 0, "Dostêpny", ICO::online);
 		UIActionAdd(ACT::status, ACT::statusAway, 0, "Zaraz wracam", ICO::away);
 		UIActionAdd(ACT::status, ACT::statusInvisible, 0, "Ukryty", ICO::invisible);
 		UIActionAdd(ACT::status, ACT::statusOffline, 0, "Niedostêpny", ICO::offline);
-		
-		//todo: Dodajemy listê serwerów (dynamiczna tablica? pewnie tak…).
+
+		refreshServers(GETSTR(CFG::servers));
 
 		ev.setSuccess();
 	}
@@ -200,15 +212,17 @@ namespace GG {
 		ev.setReturnValue(statusDescription);
 	}
 
+	void Controller::handleConfig(ActionEvent &ev) {
+		if (ev.withCode(ACTN_SAVE)) {
+			char* buff = new char[1000];
+			refreshServers(UIActionCfgGetValue(sUIAction(CFG::group, CFG::servers), buff, 1000));
+			delete[] buff;
+		}
+	}
+
 	void Controller::handleSetDefaultServers(ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION))
 			UIActionCfgSetValue(sUIAction(CFG::group, CFG::servers), GG::defaultServers);
-	}
-	
-	void Controller::handleServersField(ActionEvent &ev) {
-		if (ev.withCode(ACTN_SAVE)) {
-			//todo: Tu aktualizujemy listê serwerów.
-		}
 	}
 
 	void Controller::handleCreateGGAccount(ActionEvent &ev) {
@@ -255,6 +269,26 @@ namespace GG {
 		}
 	}
 
+	void Controller::handleStatusServer(ActionEvent &ev) {
+		if (ev.withCode(ACTN_ACTION)) {
+			if ((ACTS_CHECKED & UIActionGetStatus(ev.getAction())) == ACTS_CHECKED) {
+				UIActionSetStatus(ev.getAction(), 0);
+				servers[ev.getAction().id - ACT::statusServer].selected = false;
+				SETSTR(CFG::selectedServer, "");
+			} else {
+				for (unsigned i = 0; i < serversCount; ++i) {
+					if ((ACTS_CHECKED & UIActionGetStatus(sUIAction(ev.getParent(), ACT::statusServer + i))) == ACTS_CHECKED) {
+						UIActionSetStatus(ev.getParent(), ACT::statusServer + i, 0);
+						servers[i].selected = false;
+					}
+				}
+				UIActionSetStatus(ev.getAction(), ACTS_CHECKED);
+				servers[ev.getAction().id - ACT::statusServer].selected = true;
+				SETSTR(CFG::selectedServer, servers[ev.getAction().id - ACT::statusServer].ip.c_str());
+			}
+		}
+	}
+
 	void Controller::handleStatusOnline(ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION)) {
 			IMessage(IM_CHANGESTATUS, Net::gg, imtProtocol, ST_ONLINE, isConnected() ? 0 : (int)GETSTR(CFG::description));
@@ -277,6 +311,35 @@ namespace GG {
 		if (ev.withCode(ACTN_ACTION)) {
 			IMessage(IM_CHANGESTATUS, Net::gg, imtProtocol, ST_OFFLINE, 0);
 		}	
+	}
+
+	void Controller::refreshServers(string serversString) {
+		string selected;
+		if (!servers.empty()) {
+			for (tServers::iterator i = servers.begin(); i != servers.end(); ++i) {
+				if (i->selected) {
+					selected = i->ip;
+					break;
+				}
+			}
+		} else {
+			selected = GETSTR(CFG::selectedServer);
+		}
+
+		servers.clear();
+		servers = getServers(serversString, selected);
+
+		for (unsigned i = 0; i < serversCount; ++i) {
+			if (i + 1 <= servers.size()) {
+				UIActionSet(
+					sUIActionInfo(ACT::statusServers, ACT::statusServer + i, -1, servers[i].selected ? ACTS_CHECKED : 0, (char*)servers[i].ip.c_str())
+				);
+			} else {
+				UIActionSet(
+					sUIActionInfo(ACT::statusServers, ACT::statusServer + i, -1, ACTS_HIDDEN)
+				);
+			}
+		}
 	}
 
 	void Controller::setProxy() {
@@ -351,13 +414,13 @@ namespace GG {
 
 	void Controller::connect(tStatus status, const char* description) {
 		connecting = true;
-		connectThread = threads.runEx(connectProc, (void*)(new statusInfo(status, description)), "Connect");
+		connectThread = threads.runEx(connectProc, (void*)(new tStatusInfo(status, description)), "Connect");
 	}
 
 	unsigned __stdcall Controller::connectProc(LPVOID lParam) {
 		Controller* c = Singleton<Controller>::getInstance();
-		tStatus status = ((statusInfo*)lParam)->first;
-		string description = ((statusInfo*)lParam)->second;
+		tStatus status = ((tStatusInfo*)lParam)->first;
+		string description = ((tStatusInfo*)lParam)->second;
 		delete lParam;
 
 		IMLOG("[connectProc]: %i, %s", status, description.c_str());
@@ -389,17 +452,24 @@ namespace GG {
 		params.last_sysmsg = 0;
 		params.image_size = 0;
 		params.tls = false;
-
-		/*hostent* host = gethostbyname("91.197.13.17");
-		if (host) {
-			memcpy(&params.server_addr, host->h_addr, 4);
-		}*/
-
-		c->session = gg_login(&params);
-		while (!c->session && c->connecting) {
-			//todo: Tu mo¿emy sobie zmieniaæ serwery.
-			c->getCtrl()->Sleep(1000);
+		
+		bool rotateServers = (string)GETSTR(CFG::selectedServer) == "";
+		if (!rotateServers) {
+			hostent* host = gethostbyname(GETSTR(CFG::selectedServer));
+			if (host) {
+				memcpy(&params.server_addr, host->h_addr, 4);
+			}
+		}
+		
+		for (unsigned i = 0; !c->session && c->connecting; ++i) {
+			if (rotateServers) {
+				hostent* host = gethostbyname(c->servers[i % c->servers.size()].ip.c_str());
+				if (host) {
+					memcpy(&params.server_addr, host->h_addr, 4);
+				}
+			}
 			c->session = gg_login(&params);
+			c->getCtrl()->Sleep(1000);
 		}
 
 		if (c->session) {
@@ -411,6 +481,7 @@ namespace GG {
 			c->connecting = false;
 			c->connected = true;
 
+			//todo: Dziwne, czeka na event w nieskoñczonoœæ…
 			/*gg_event* event;
 			while (event = gg_watch_fd(c->session)) {
 				IMLOG("%p", event);

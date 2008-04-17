@@ -10,7 +10,8 @@ namespace GG {
 	const int sig = (int)"GG"; //sygnatura
 	const int name = (int)"Gadu-Gadu"; //nazwa
 	
-	const char defaultServers[] = "\r\n91.197.13.17\r\n91.197.13.2\r\n\91.197.13.28\r\n91.197.13.26\r\.197.13.18\r\n91.197.13.12\r\n91.197.13.27\r\n91.197.13.24\r\n91.197.13.13\r\n91.197.13.29\r\n91.197.13.21\r\n91.197.13.25\r\n91.197.13.20\r\n91.197.13.32\r\n91.197.13.31\r\n91.197.13.33\r\n91.197.13.19\r\n91.197.13.49";
+	const char defaultServers[] = "\r\n91.197.13.17\r\n91.197.13.2\r\n91.197.13.28\r\n91.197.13.26\r\n91.197.13.18\r\n91.197.13.12\r\n91.197.13.27\r\n91.197.13.24\r\n91.197.13.13\r\n91.197.13.29\r\n91.197.13.21\r\n91.197.13.25\r\n91.197.13.20\r\n91.197.13.32\r\n91.197.13.31\r\n91.197.13.33\r\n91.197.13.19\r\n91.197.13.49";
+	const unsigned serversCount = 25;
 
 	namespace CFG {
 		const unsigned group = net * 1000;
@@ -21,7 +22,7 @@ namespace GG {
 		const unsigned description = group + 5;
 		const unsigned friendsOnly = group + 6;
 		const unsigned servers = group + 7;
-		const unsigned choosenServer = group + 8;
+		const unsigned selectedServer = group + 8;
 		const unsigned useSSL = group + 9;
 		const unsigned resumeDisconnected = group + 10;
 
@@ -33,7 +34,7 @@ namespace GG {
 		const unsigned description = 1057;
 		const unsigned friendsOnly = 1058;
 		const unsigned servers = 1059;
-		const unsigned choosenServer = 1060;
+		const unsigned selectedServer = 1060;
 		const unsigned trayMenu = 1061;
 		const unsigned useSSL = 1063;
 		const unsigned resumeDisconnected = 1064;*/
@@ -51,11 +52,15 @@ namespace GG {
 		const unsigned refreshCnts = net * 1000 + 208;
 
 		const unsigned status = net * 1000 + 209;
-		const unsigned statusDescripton = net * 1000 + 210;
-		const unsigned statusOnline = net * 1000 + 211;
-		const unsigned statusAway = net * 1000 + 212;
-		const unsigned statusInvisible = net * 1000 + 213;
-		const unsigned statusOffline = net * 1000 + 214;
+		const unsigned statusServers = net * 1000 + 210;
+		const unsigned statusDescripton = net * 1000 + 211;
+		const unsigned statusOnline = net * 1000 + 212;
+		const unsigned statusAway = net * 1000 + 213;
+		const unsigned statusInvisible = net * 1000 + 214;
+		const unsigned statusOffline = net * 1000 + 215;
+		
+		//tu rezerwujemy serversCount identyfikatorów, pocz¹wszy od poni¿szego;
+		const unsigned statusServer = net * 1000 + 250;
 	};
 
 	namespace ICO {

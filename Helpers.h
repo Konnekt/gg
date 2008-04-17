@@ -3,4 +3,5 @@
 namespace GG {
 	int convertKStatus(tStatus status, string description = "");
 	tStatus convertGGStatus(int status);
+	Controller::tServers getServers(string serversString, string selected = "");
 }

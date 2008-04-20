@@ -77,7 +77,7 @@ namespace GG {
 		return !tokenVal.empty();
 	}
 
-	//todo: Poni¿sze funkcje mog¹ informowaæ rodzajach b³êdów (te informacje s¹ w logach, pewnie da siê je wyci¹gn¹æ).
+	//todo: Poni¿sze funkcje mog¹ informowaæ rodzajach b³êdów. Informacje wyci¹gamy przez f-cjê debugow¹ - inaczej siê chyba nie da (czyli czekamy na Winthuxa i naprawienie nowego libgadu…).
 	unsigned __stdcall createGGAccount(LPVOID lParam) {
 		if (ICMessage(IMI_CONFIRM, (int)"Zostanie za³o¿one nowe konto w sieci Gadu-Gadu™.\nKontynuowaæ?", MB_TASKMODAL | MB_YESNO) == IDNO) 
 			return 0;
@@ -121,6 +121,7 @@ namespace GG {
 		}
 		ICMessage(IMI_LONGEND, (int)&sdl);
 
+		gg_register_watch_fd(gghttp);
 		gg_pubdir* pd = (gg_pubdir*)gghttp->data;
 		if (pd->success) {
 			UIActionCfgSetValue(sUIAction(CFG::group, CFG::login), inttostr(pd->uin).c_str());

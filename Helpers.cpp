@@ -46,7 +46,6 @@ namespace GG {
 	}
 	
 	Controller::tServers getServers(string serversString, string selected) {
-		//todo: Przejrzeæ, pisane noc¹ i wydaje siê skomplikowane (ale dzia³a… ;)).
 		Controller::tServers servers;
 		size_t a = 0;
 		size_t b = 0;

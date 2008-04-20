@@ -6,7 +6,9 @@
 
 namespace GG {
 	//debug: To tylko tymczasowe.
-	/*void handler (int level, const char * format, va_list p) {
+	void handler (int level, const char * format, ...) {
+		va_list p;
+		va_start(p, format);
 		int size = _vscprintf(format, p);
 		char * buff = new char [size + 2];
 		buff[size + 1] = 0;
@@ -14,11 +16,12 @@ namespace GG {
 		buff[size] = 0;
 		Singleton<Controller>::getInstance()->getCtrl()->logMsg(Stamina::logWarn, "", "", buff);
 		delete [] buff;
-	}*/
+		va_end(p);
+	}
 
 	Controller::Controller() : connected(false), connecting(false), status(ST_OFFLINE), session(0), connectThread(0) {
 		gg_debug_level = GG_DEBUG_MISC;
-		//gg_debug_handler = &handler;
+		gg_debug = &handler;
 		IMessageDispatcher& d = getIMessageDispatcher();
 		ActionDispatcher& a = getActionDispatcher();
 		Config& c = getConfig();
@@ -182,13 +185,15 @@ namespace GG {
 	void Controller::onBeforeEnd(IMEvent &ev) {
 		if (connecting) {
 			connecting = false;
-			for (unsigned i = 0; i < 5; ++i) {
-				if (WaitForSingleObject(connectThread, 500) != WAIT_OBJECT_0) {
-					getCtrl()->WMProcess();
-					continue;
-				} else {
-					CloseHandle(connectThread);
-					return;
+			if (!Ctrl->QuickShutdown()) {
+				for (unsigned i = 0; i < 5; ++i) {
+					if (WaitForSingleObject(connectThread, 500) != WAIT_OBJECT_0) {
+						getCtrl()->WMProcess();
+						continue;
+					} else {
+						CloseHandle(connectThread);
+						return;
+					}
 				}
 			}
 			TerminateThread(connectThread, 0);
@@ -413,8 +418,10 @@ namespace GG {
 	}
 
 	void Controller::connect(tStatus status, const char* description) {
-		connecting = true;
-		connectThread = threads.runEx(connectProc, (void*)(new tStatusInfo(status, description)), "Connect");
+		if (!isConnected() && status != ST_OFFLINE && checkConnection(ccInternet | ccData)) {
+			connecting = true;
+			connectThread = threads.runEx(connectProc, (void*)(new tStatusInfo(status, description)), "Connect");
+		}
 	}
 
 	unsigned __stdcall Controller::connectProc(LPVOID lParam) {
@@ -425,23 +432,16 @@ namespace GG {
 
 		IMLOG("[connectProc]: %i, %s", status, description.c_str());
 
-		if (c->isConnected() || status == ST_OFFLINE || !c->checkConnection(ccInternet | ccData))
-			return false;
-
-		PlugStatusChange(ST_CONNECTING);
-		c->status = ST_CONNECTING;
-
 		gg_login_params params;
+		hostent* host;
 		memset(&params, 0, sizeof(params));
 		params.uin = atoi(GETSTR(CFG::login));
 		string password = c->getPassword();
 		if (password.empty()) {
-			PlugStatusChange(ST_OFFLINE);
-			c->status = ST_OFFLINE;
-			c->statusDescription = "";
+			IMLOG("Brak has³a…");
 			c->connected = false;
 			c->connecting = false;
-			return false;
+			return 0;
 		}
 		params.password = (char*)password.c_str();
 		params.status = convertKStatus(status, description);
@@ -452,62 +452,95 @@ namespace GG {
 		params.last_sysmsg = 0;
 		params.image_size = 0;
 		params.tls = false;
-		
+
+		PlugStatusChange(ST_CONNECTING);
+		c->status = ST_CONNECTING;
+
 		bool rotateServers = (string)GETSTR(CFG::selectedServer) == "";
 		if (!rotateServers) {
-			hostent* host = gethostbyname(GETSTR(CFG::selectedServer));
-			if (host) {
+			host = gethostbyname(GETSTR(CFG::selectedServer));
+			if (host)
 				memcpy(&params.server_addr, host->h_addr, 4);
-			}
+			else
+				params.server_addr = 0;
 		}
-		
+
 		for (unsigned i = 0; !c->session && c->connecting; ++i) {
+			PlugStatusChange(ST_CONNECTING);
+			c->status = ST_CONNECTING;
+			c->statusDescription = "";
+
 			if (rotateServers) {
-				hostent* host = gethostbyname(c->servers[i % c->servers.size()].ip.c_str());
-				if (host) {
+				host = gethostbyname(c->servers[i % c->servers.size()].ip.c_str());
+				if (host)
 					memcpy(&params.server_addr, host->h_addr, 4);
-				}
+				else
+					params.server_addr = 0;
 			}
+
+			IMLOG("£¹czê z: %i, rotacja: %i", params.server_addr, rotateServers);
 			c->session = gg_login(&params);
-			c->getCtrl()->Sleep(1000);
-		}
+			
+			if (c->session) {
+				PlugStatusChange(status, description.c_str());
+				gg_change_status_descr(c->session, convertKStatus(status, description), description.c_str());
 
-		if (c->session) {
-			PlugStatusChange(status, description.c_str());
-			gg_change_status_descr(c->session, convertKStatus(status, description), description.c_str());
+				c->status = status;
+				c->statusDescription = description;
+				c->connecting = false;
+				c->connected = true;
 
-			c->status = status;
-			c->statusDescription = description;
-			c->connecting = false;
-			c->connected = true;
+				//debug: Do usuniêcia.
+				gg_send_message(c->session, GG_CLASS_CHAT, 1169042, (const unsigned char*)"Czeœæ!");
+				
+				//todo: Tutaj wysy³amy listê kontaktów.
 
-			//todo: Dziwne, czeka na event w nieskoñczonoœæ…
-			/*gg_event* event;
-			while (event = gg_watch_fd(c->session)) {
-				IMLOG("%p", event);
-				switch (event->type) {
-					case GG_EVENT_CONN_SUCCESS: {
-						IMLOG("Uda³o siê?");
+				IMLOG("Kolejka zdarzeñ GG…");
+				bool loop = true;
+
+				for (bool first = true; c->session->state == GG_STATE_CONNECTED && loop; first = false) {
+					gg_event* event = gg_watch_fd(c->session);
+					if (!event && first) {
+						//Gdy pierwszy event == 0 i jest odebrany po krótkim czasie to warto wznowiæ ³¹czenie.
+						c->connecting = true;
 						break;
-					} case GG_EVENT_CONN_FAILED: {
-						IMLOG("Dupa, jeszcze raz…");
+					} else if (!event) {
 						break;
 					}
-				}
-				gg_event_free(event);
-			}*/
 
-			//debug: Do usuniêcia.
-			gg_send_message(c->session, GG_CLASS_CHAT, 1169042, (const unsigned char*)"Czeœæ!");
-			return true;
-		} else {
-			PlugStatusChange(ST_OFFLINE);
-			c->status = ST_OFFLINE;
-			c->statusDescription = "";
-			c->connecting = false;
-			c->connected = false;
-			return false;
+					switch (event->type) {
+						case GG_EVENT_CONN_SUCCESS: {
+							IMLOG("GG_EVENT_CONN_SUCCESS");
+							break;
+						} case GG_EVENT_CONN_FAILED: {
+							IMLOG("GG_EVENT_CONN_FAILED");
+							//todo: Z³e has³o.
+							loop = false;
+							break;
+						} case GG_EVENT_DISCONNECT: {
+							IMLOG("GG_EVENT_DISCONNECT");
+							loop = false;
+							break;
+						} default: {
+							IMLOG("GG_EVENT_… = %i", event->type);
+						}
+					}
+					gg_event_free(event);
+				}
+				gg_free_session(c->session);
+				c->session = 0;
+				c->connected = false;
+				c->statusDescription = "";
+				IMLOG("Kolejka siê zakoñczy³a.");
+			}
 		}
+
+		PlugStatusChange(ST_OFFLINE);
+		c->status = ST_OFFLINE;
+		c->statusDescription = "";
+		c->connecting = false;
+		c->connected = false;
+		return 0;
 	}
 
 	void Controller::setStatus(tStatus status, const char* description) {
@@ -539,10 +572,8 @@ namespace GG {
 		gg_change_status_descr(session, setStatus, setDescription.c_str());
 
 		gg_logoff(session);
-		gg_free_session(session);
 		connected = false;
 		this->status = ST_OFFLINE;
 		this->statusDescription = setDescription.c_str();
-		session = 0;
 	}
 }

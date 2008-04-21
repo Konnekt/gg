@@ -21,7 +21,7 @@ namespace GG {
 
 	Controller::Controller() : connected(false), connecting(false), status(ST_OFFLINE), session(0), connectThread(0) {
 		gg_debug_level = GG_DEBUG_MISC;
-		gg_debug = &handler;
+		//gg_debug = &handler;
 		IMessageDispatcher& d = getIMessageDispatcher();
 		ActionDispatcher& a = getActionDispatcher();
 		Config& c = getConfig();
@@ -489,16 +489,30 @@ namespace GG {
 				c->statusDescription = description;
 				c->connecting = false;
 				c->connected = true;
-
-				//debug: Do usuniêcia.
-				gg_send_message(c->session, GG_CLASS_CHAT, 1169042, (const unsigned char*)"Czeœæ!");
 				
-				//todo: Tutaj wysy³amy listê kontaktów.
+				//hack: Hao mia³ ograniczenie do 400 kontaktów. Czemu?
+				unsigned cntCount = IMessage(IMC_CNT_COUNT);
+				unsigned cntGGCount = 0;
+				//hack: Rezerwujê nieco za du¿o, ale w sumie to bezpieczne, lepiej tak ni¿ tworzyæ sobie jeszcze vector.
+				uin_t* uins = new uin_t[cntCount];
+				char* types = new char[cntCount];
+				for (unsigned i = 1; i < cntCount; ++i) {
+					Contact cnt(i);
+					if (cnt.getNet() == Net::gg && !(cnt.getStatus() & ST_NOTINLIST)) {
+						uins[cntGGCount] = atoi((char*)cnt.getUidString().a_str());
+						types[cntGGCount] = getCntType(cnt.getStatus());
+						if (uins[cntGGCount])
+							++cntGGCount;
+					}
+				}
+				gg_notify_ex(c->session, uins, types, cntGGCount);
+				delete[] uins;
+				delete[] types;
 
 				IMLOG("Kolejka zdarzeñ GG…");
 				bool loop = true;
 
-				for (bool first = true; c->session->state == GG_STATE_CONNECTED && loop; first = false) {
+				for (bool first = true; loop && c->session->state == GG_STATE_CONNECTED; first = false) {
 					gg_event* event = gg_watch_fd(c->session);
 					if (!event && first) {
 						//Gdy pierwszy event == 0 i jest odebrany po krótkim czasie to warto wznowiæ ³¹czenie.
@@ -520,6 +534,47 @@ namespace GG {
 						} case GG_EVENT_DISCONNECT: {
 							IMLOG("GG_EVENT_DISCONNECT");
 							loop = false;
+							break;
+						} case GG_EVENT_NOTIFY60: {
+							IMLOG("GG_EVENT_NOTIFY60");
+							for (unsigned i = 0; event->event.notify60[i].uin; i++) {
+								Contact cnt = cnt.find(Net::gg, inttostr(event->event.notify60[i].uin));
+								if (cnt.getID() > 0) {
+									c->setCntStatus(cnt, convertGGStatus(event->event.notify60[i].status),
+										event->event.notify60[i].descr,
+										event->event.notify60[i].remote_ip,
+										event->event.notify60[i].remote_port
+									);
+								}
+							}
+							ICMessage(IMI_REFRESH_LST);
+							break;
+						} case GG_EVENT_STATUS60: {
+							IMLOG("GG_EVENT_STATUS60");
+							Contact cnt = cnt.find(Net::gg, inttostr(event->event.status60.uin));
+							if (cnt.getID() > 0) {
+								c->setCntStatus(cnt, convertGGStatus(event->event.status60.status),
+									event->event.status60.descr,
+									event->event.status60.remote_ip,
+									event->event.status60.remote_port
+								);
+							}
+							ICMessage(IMI_REFRESH_LST);
+							break;
+						} case GG_EVENT_STATUS: {
+							IMLOG("GG_EVENT_STATUS");
+							Contact cnt = cnt.find(Net::gg, inttostr(event->event.status.uin));
+							if (cnt.getID() > 0) {
+								c->setCntStatus(cnt, convertGGStatus(event->event.status.status),
+									event->event.status.descr
+								);
+							}
+							ICMessage(IMI_REFRESH_LST);
+							break;
+						} case GG_EVENT_NOTIFY:
+						case GG_EVENT_NOTIFY_DESCR: {
+							//debug: Ponoæ serwer ju¿ nie wysy³a tego, ale jeœli dokumentacja libgadu siê myli to wolê siê jakoœ dowiedzieæ.
+							MessageBox(0, "DOSTA£EŒ GG_EVENT_NOTIFY(_DESCR)!", 0, 0);
 							break;
 						} default: {
 							IMLOG("GG_EVENT_… = %i", event->type);
@@ -576,4 +631,13 @@ namespace GG {
 		this->status = ST_OFFLINE;
 		this->statusDescription = setDescription.c_str();
 	}
+
+	void Controller::setCntStatus(Contact& cnt, tStatus status, string description, long ip, int port) {
+		ICMessage(IMI_CNT_ACTIVITY, cnt.getID());
+		CntSetStatus(cnt.getID(), status, description.c_str());
+		if (ip)
+			cnt.setHost(longToIp(ip));
+		if (port)
+			cnt.setPort(port);
+	}	
 }

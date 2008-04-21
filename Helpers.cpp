@@ -6,6 +6,7 @@
 
 namespace GG {
 	int convertKStatus(tStatus status, string description) {
+		//todo: GG_STATUS_FRIENDS_MASK
 		switch (status) {
 			case ST_ONLINE: {
 				return description.empty() ? GG_STATUS_AVAIL : GG_STATUS_AVAIL_DESCR;
@@ -74,5 +75,9 @@ namespace GG {
 		}
 		
 		return servers;
+	}
+
+	int getCntType(tStatus status) {
+		return (status & ST_IGNORED) ? GG_USER_BLOCKED : (status & ST_HIDEMYSTATUS) ? GG_USER_OFFLINE : GG_USER_NORMAL;
 	}
 }

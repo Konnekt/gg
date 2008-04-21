@@ -97,6 +97,8 @@ namespace GG {
 		void sendMessage();
 		void disconnect(const char* description = "");
 
+		void setCntStatus(Contact& cnt, tStatus status, string description, long ip = 0, int port = 0);
+
 	public:
 		static unsigned __stdcall connectProc(LPVOID param);
 

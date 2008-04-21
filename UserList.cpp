@@ -54,8 +54,8 @@ namespace GG {
 
 	string exportListToString() {
 		string result = "";
-		int a = ICMessage(IMC_CNT_COUNT);
-		for (int i = 1; i < a; i++) {
+		int cntCount = ICMessage(IMC_CNT_COUNT);
+		for (int i = 1; i < cntCount; i++) {
 			Contact cnt = Contact(i);
 
 			if ((cnt.getNet() == GG::net || cnt.getNet() == Net::none) && (!cnt.getDisplay().empty() || (cnt.getNet() != Net::none && !cnt.getUid().empty()))) {

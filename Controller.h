@@ -112,6 +112,9 @@ namespace GG {
 		ThreadRunner threads;
 		HANDLE connectThread;
 		vector<Server> servers;
+		
+		//flagi dla w¹tków
+		bool stopConnecting;
 
 	public:
 		//zmienne zewnêtrzne

@@ -55,11 +55,11 @@ namespace GG {
 	string exportListToString() {
 		string result = "";
 		int cntCount = ICMessage(IMC_CNT_COUNT);
+		const string separator(";");
 		for (int i = 1; i < cntCount; i++) {
-			Contact cnt = Contact(i);
+			Contact cnt(i);
 
 			if ((cnt.getNet() == GG::net || cnt.getNet() == Net::none) && (!cnt.getDisplay().empty() || (cnt.getNet() != Net::none && !cnt.getUid().empty()))) {
-				string separator = ";";
 				result += cnt.getName() + separator;
 				result += cnt.getSurname() + separator;
 				result += cnt.getNick() + separator;

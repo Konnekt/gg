@@ -6,22 +6,31 @@
 
 namespace GG {
 	int convertKStatus(tStatus status, string description) {
-		//todo: GG_STATUS_FRIENDS_MASK
+		int result;
 		switch (status) {
 			case ST_ONLINE: {
-				return description.empty() ? GG_STATUS_AVAIL : GG_STATUS_AVAIL_DESCR;
+				result = description.empty() ? GG_STATUS_AVAIL : GG_STATUS_AVAIL_DESCR;
+				break;
 			} case ST_AWAY: {
-				return description.empty() ? GG_STATUS_BUSY : GG_STATUS_BUSY_DESCR;
+				result = description.empty() ? GG_STATUS_BUSY : GG_STATUS_BUSY_DESCR;
+				break;
 			} case ST_HIDDEN: {
-				return description.empty() ? GG_STATUS_INVISIBLE : GG_STATUS_INVISIBLE_DESCR;
+				result = description.empty() ? GG_STATUS_INVISIBLE : GG_STATUS_INVISIBLE_DESCR;
+				break;
 			} case ST_OFFLINE: {
-				return description.empty() ? GG_STATUS_NOT_AVAIL : GG_STATUS_NOT_AVAIL_DESCR;
+				result = description.empty() ? GG_STATUS_NOT_AVAIL : GG_STATUS_NOT_AVAIL_DESCR;
+				break;
 			} case ST_IGNORED: {
-				return GG_STATUS_BLOCKED;
+				result = GG_STATUS_BLOCKED;
+				break;
 			} default: {
-				return description.empty() ? GG_STATUS_NOT_AVAIL : GG_STATUS_NOT_AVAIL_DESCR;
+				result = description.empty() ? GG_STATUS_NOT_AVAIL : GG_STATUS_NOT_AVAIL_DESCR;
+				break;
 			}
 		}
+		if (GETINT(CFG::friendsOnly))
+			result |= GG_STATUS_FRIENDS_MASK;
+		return result;
 	}
 	
 	tStatus convertGGStatus(int status) {

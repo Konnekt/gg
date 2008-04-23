@@ -17,12 +17,17 @@
 #define WIN32_LEAN_AND_MEAN
 
 // wci¹gamy biblioteke libgadu
+#ifdef _DEBUG
+#pragma comment (lib, "libgadu_d.lib")
+#else
 #pragma comment (lib, "libgadu.lib")
+#endif
 // i reszte
 #pragma comment (lib, "shlwapi.lib")
 #pragma comment (lib, "ws2_32.lib")
 
 // Windows Header Files:
+#include <Winsock2.h>
 #include <windows.h>
 #include <Commdlg.h>
 #include <windowsx.h>
@@ -48,8 +53,12 @@
 
 //Libgadu
 //todo: W tym s¹ makra podmieniaj¹ce write/send. Nie pozwala na u¿ywanie tej f-cji - to idiotyzm! Trzeba obejœæ.
-#include <libgadu/compat.h>
-#include <libgadu/libgadu.h>
+//WTX:	Nie wiem czy jest sens includeowac to w stdafx, zeby wszedzie byly dostepne funkcje libgadu
+//		moim zdaniem trzeba te includy przeniesc do plikow, w ktorych te metody sa wykorzystywane
+// #include <compat_w32.h> 
+#define ASSIGN_SOCKETS_TO_THREADS
+#define gg_thread_socket gg_win32_thread_socket
+#include <libgadu/include/libgadu.h>
 
 // nag³ówki boosta
 #include <boost/signal.hpp>
@@ -86,7 +95,7 @@ using namespace std;
 #include <konnekt/gg.h>
 #include <konnekt/ui_message_controls.h>
 #include <konnekt/lib.h>
-#include <konnekt/tabletka.h>
+//WTX: #include <konnekt/tabletka.h>
 #include <konnekt/plugsNET.h>
 #include <konnekt/core_contact.h>
 #include <konnekt/contrib/iController.h>

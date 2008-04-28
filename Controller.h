@@ -27,6 +27,7 @@ namespace GG {
 		};
 		
 		typedef vector<Server> tServers;
+		typedef pair<tStatus, string> tStatusInfo;
 
 	protected:
 		Controller();
@@ -67,6 +68,9 @@ namespace GG {
 		void handleStatusAway(ActionEvent& ev);
 		void handleStatusInvisible(ActionEvent& ev);
 		void handleStatusOffline(ActionEvent& ev);
+		
+	protected:
+		static unsigned __stdcall ggWatchThread(LPVOID lParam);
 
 	public:
 		//API
@@ -89,7 +93,7 @@ namespace GG {
 	protected:
 		//zmienne wewnêtrzne
 		ThreadRunner threads;
-		GGSession gg;
+		Session* gg;
 		vector<Server> servers;
 
 	public:

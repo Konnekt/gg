@@ -2,10 +2,11 @@
 #include "GG.h"
 #include "GGSession.h"
 
-GGSession::GGSession(ThreadRunner& threads) :
-	_threads(threads), _session(0), _thread(0), _connected(false), _connecting(false), _status(ST_OFFLINE), _statusDescription("") { }
+Session::Session(string login, string password, ggHandler handler, bool friendsOnly) :
+	_login (atoi(login.c_str())), _password(password), _handler(handler), _friendsOnly(friendsOnly), _session(0), 
+	_thread(0), _connected(false), _connecting(false), _watching(false), _status(ST_OFFLINE), _statusDescription("") { }
 
-void GGSession::setProxy(bool enabled, bool httpOnly, string host, int port, string login, string password) {
+void Session::setProxy(bool enabled, bool httpOnly, string host, int port, string login, string password) {
 	static char hostBuff[100];
 	static char loginBuff[100];
 	static char passwordBuff[100];
@@ -29,14 +30,115 @@ void GGSession::setProxy(bool enabled, bool httpOnly, string host, int port, str
 	}
 }
 
-void GGSession::connect(string login, string password, ggHandler handler, tStatus status, string statusDescription, bool friendsOnly) {
+bool Session::connect(tStatus status, string statusDescription) {
 	if (!isConnected() && !isConnecting() && status != ST_OFFLINE) {
 		_connecting = true;
-		_thread = _threads.runEx(connectProc, (void*)(new ConnectInfo(login, password, handler, status, statusDescription, friendsOnly, this)), "Connect");
+
+		gg_login_params gglp;
+		memset(&gglp, 0, sizeof(gglp));
+		gglp.uin = _login;
+		gglp.password = (char*)_password.c_str();
+		gglp.status = convertKStatus(status, statusDescription);
+		gglp.status_descr = (char*)statusDescription.c_str();
+		gglp.async = false;
+		gglp.client_version = GG_DEFAULT_CLIENT_VERSION;
+		gglp.protocol_version = GG_DEFAULT_PROTOCOL_VERSION;
+		gglp.last_sysmsg = 0;
+		gglp.image_size = 0;
+		gglp.tls = false;
+
+		hostent* host;
+
+		_status = ST_CONNECTING;
+
+		/*bool rotateServers = (string)GETSTR(CFG::selectedServer) == "";
+		if (!rotateServers) {
+			host = gethostbyname(GETSTR(CFG::selectedServer));
+			if (host)
+				memcpy(&gglp.server_addr, host->h_addr, 4);
+			else
+				gglp.server_addr = 0;
+		}*/
+
+		_stopConnecting = false;
+
+		for (unsigned i = 0; !_session && _connecting && !_stopConnecting; ++i) {
+			_status = ST_CONNECTING;
+			_statusDescription = "";
+
+			/*if (rotateServers) {
+				host = gethostbyname(c->servers[i % c->servers.size()].ip.c_str());
+				if (host)
+					memcpy(&gglp.server_addr, host->h_addr, 4);
+				else
+					gglp.server_addr = 0;
+			}*/
+
+			_session = gg_login(&gglp);
+			
+			if (_session) {
+				gg_change_status_descr(_session, convertKStatus(status, statusDescription), statusDescription.c_str());
+
+				_status = status;
+				_statusDescription = statusDescription;
+				_connecting = false;
+				_connected = true;
+				return true;
+			}
+		}
+
+		_status = ST_OFFLINE;
+		_statusDescription = "";
+		_connecting = false;
+		_connected = false;
+		return 0;
 	}
 }
 
-void GGSession::stopConnecting(bool quick, unsigned timeout, bool terminate) {
+void Session::startWatching() {
+	IMLOG("Kolejka zdarzeñ GG…");
+	if (_connected) {
+		_watching = true;
+
+		for (bool first = true; _watching && _session->state == GG_STATE_CONNECTED; first = false) {
+			gg_event* event = gg_watch_fd(_session);
+			if (!event) {
+				break;
+			}
+
+			switch (event->type) {
+				case GG_EVENT_CONN_FAILED: {
+					_watching = false;
+					break;
+				} case GG_EVENT_DISCONNECT: {
+					_watching = false;
+					break;
+				} case GG_EVENT_NOTIFY:
+				case GG_EVENT_NOTIFY_DESCR: {
+					//debug: Ponoæ serwer ju¿ nie wysy³a tego, ale jeœli dokumentacja libgadu siê myli to wolê siê jakoœ dowiedzieæ.
+					MessageBox(0, "DOSTA£EŒ GG_EVENT_NOTIFY(_DESCR)!", 0, 0);
+					break;
+				} case GG_EVENT_NONE: {
+					continue;
+				} default: {
+					
+				}
+			}
+			(*_handler)(event);
+			gg_event_free(event);
+		}
+		IMLOG("Kolejka siê zakoñczy³a.");
+
+		gg_free_session(_session);
+		_session = 0;
+		_connected = false;
+		_watching = false;
+		_status = ST_OFFLINE;
+		_statusDescription = "";
+	}
+}
+
+void Session::stopConnecting(bool quick, unsigned timeout, bool terminate) {
 	_stopConnecting = true;
 	if (!quick && WaitForSingleObject(_thread, 500) == WAIT_OBJECT_0) {
 		CloseHandle(_thread);
@@ -46,7 +148,7 @@ void GGSession::stopConnecting(bool quick, unsigned timeout, bool terminate) {
 	CloseHandle(_thread);
 }
 
-void GGSession::setStatus(tStatus status, const char* description) {
+void Session::setStatus(tStatus status, const char* description) {
 	if (!_connected && !_connecting && status != ST_OFFLINE) {
 		return;
 	} else if (_connecting && status == ST_OFFLINE) {
@@ -57,7 +159,7 @@ void GGSession::setStatus(tStatus status, const char* description) {
 		return disconnect(description);
 	}
 
-	string setDescription = description ? description : _statusDescription.a_str();
+	string setDescription = description ? description : _statusDescription.c_str();
 	int setStatus = status == -1 ? convertKStatus(_status, setDescription) : convertKStatus(status, setDescription);
 	PlugStatusChange(status == -1 ? _status : status, setDescription.c_str());
 	gg_change_status_descr(_session, setStatus, setDescription.c_str());
@@ -66,13 +168,12 @@ void GGSession::setStatus(tStatus status, const char* description) {
 	_statusDescription = setDescription;
 }
 
-void GGSession::disconnect(const char* description) {
+void Session::disconnect(const char* description) {
 	if (!isConnected())
 		return;
 
 	string setDescription = description ? description : _statusDescription.c_str();
 	int setStatus = setDescription.empty() ? GG_STATUS_NOT_AVAIL : GG_STATUS_NOT_AVAIL_DESCR;
-	PlugStatusChange(ST_OFFLINE, setDescription.c_str());
 	gg_change_status_descr(_session, setStatus, setDescription.c_str());
 
 	gg_logoff(_session);
@@ -82,126 +183,12 @@ void GGSession::disconnect(const char* description) {
 	_statusDescription = setDescription.c_str();
 }
 
-unsigned __stdcall GGSession::connectProc(LPVOID lParam) {
-	ConnectInfo ci(*(ConnectInfo*)lParam);
-	delete lParam;
-	GGSession* gg = ci.gg;
-
-	gg_login_params gglp;
-	memset(&gglp, 0, sizeof(gglp));
-	gglp.uin = atoi(ci.login.c_str());
-	gglp.password = (char*)ci.password.c_str();
-	gglp.status = convertKStatus(ci.status, ci.statusDescription);
-	gglp.status_descr = (char*)ci.statusDescription.c_str();
-	gglp.async = false;
-	gglp.client_version = GG_DEFAULT_CLIENT_VERSION;
-	gglp.protocol_version = GG_DEFAULT_PROTOCOL_VERSION;
-	gglp.last_sysmsg = 0;
-	gglp.image_size = 0;
-	gglp.tls = false;
-
-	hostent* host;
-
-	PlugStatusChange(ST_CONNECTING);
-	gg->_status = ST_CONNECTING;
-
-	/*bool rotateServers = (string)GETSTR(CFG::selectedServer) == "";
-	if (!rotateServers) {
-		host = gethostbyname(GETSTR(CFG::selectedServer));
-		if (host)
-			memcpy(&gglp.server_addr, host->h_addr, 4);
-		else
-			gglp.server_addr = 0;
-	}*/
-
-	gg->_stopConnecting = false;
-
-	for (unsigned i = 0; !gg->_session && gg->_connecting && !gg->_stopConnecting; ++i) {
-		PlugStatusChange(ST_CONNECTING);
-		gg->_status = ST_CONNECTING;
-		gg->_statusDescription = "";
-
-		/*if (rotateServers) {
-			host = gethostbyname(c->servers[i % c->servers.size()].ip.c_str());
-			if (host)
-				memcpy(&gglp.server_addr, host->h_addr, 4);
-			else
-				gglp.server_addr = 0;
-		}*/
-
-		gg->_session = gg_login(&gglp);
-		
-		if (gg->_session) {
-			PlugStatusChange(ci.status, ci.statusDescription.c_str());
-			gg_change_status_descr(gg->_session, convertKStatus(ci.status, ci.statusDescription), ci.statusDescription.c_str());
-
-			gg->_status = ci.status;
-			gg->_statusDescription = ci.statusDescription;
-			gg->_connecting = false;
-			gg->_connected = true;
-
-			IMLOG("Kolejka zdarzeñ GG…");
-			//debug: Do usuniêcia
-			uin_t kontakty[] = {1169042};
-			gg_notify(gg->_session, kontakty, 1);
-
-			bool loop = true;
-
-			for (bool first = true; loop && gg->_session->state == GG_STATE_CONNECTED; first = false) {
-				gg_event* event = gg_watch_fd(gg->_session);
-				if (!event && first) {
-					IMLOG("Fa³szywe po³¹czenie, próbujê znowu…");
-					//todo: To z³y sposób. Mam nadziejê, ¿e nowe libgadu tak nie robi.
-					//c->connecting = true;
-					break;
-				} else if (!event) {
-					break;
-				}
-
-				switch (event->type) {
-					case GG_EVENT_CONN_FAILED: {
-						loop = false;
-						break;
-					} case GG_EVENT_DISCONNECT: {
-						loop = false;
-						break;
-					} case GG_EVENT_NOTIFY:
-					case GG_EVENT_NOTIFY_DESCR: {
-						//debug: Ponoæ serwer ju¿ nie wysy³a tego, ale jeœli dokumentacja libgadu siê myli to wolê siê jakoœ dowiedzieæ.
-						MessageBox(0, "DOSTA£EŒ GG_EVENT_NOTIFY(_DESCR)!", 0, 0);
-						break;
-					} case GG_EVENT_NONE: {
-						continue;
-					} default: {
-						
-					}
-				}
-				(*ci.handler)(event);
-				gg_event_free(event);
-			}
-			gg_free_session(gg->_session);
-			gg->_session = 0;
-			gg->_connected = false;
-			gg->_statusDescription = "";
-			IMLOG("Kolejka siê zakoñczy³a.");
-		}
-	}
-
-	IMLOG("Koniec w¹tku.");
-	PlugStatusChange(ST_OFFLINE);
-	gg->_status = ST_OFFLINE;
-	gg->_statusDescription = "";
-	gg->_connecting = false;
-	gg->_connected = false;
-	return 0;
-}
-
-void GGSession::sendCnts(Contacts& cnts) {
+void Session::sendCnts(tContacts& cnts) {
 	//hack: Hao mia³ ograniczenie do 400 kontaktów. Czemu?
 	uin_t* uins = new uin_t[cnts.size()];
 	char* types = new char[cnts.size()];
 	unsigned cntsCount = 0;
-	for (Contacts::iterator cnt = cnts.begin(); cnt != cnts.end(); ++cnt) {
+	for (tContacts::iterator cnt = cnts.begin(); cnt != cnts.end(); ++cnt) {
 		if (!(cnt->getStatus() & ST_NOTINLIST)) {
 			uins[cntsCount] = atoi((char*)cnt->getUidString().a_str());
 			types[cntsCount] = getCntType(cnt->getStatus());
@@ -214,28 +201,34 @@ void GGSession::sendCnts(Contacts& cnts) {
 	delete[] types;
 }
 
-void GGSession::addCnt(Contact &cnt) {
-	gg_add_notify_ex(_session, atoi(cnt.getUidString().a_str()), getCntType(cnt));
+void Session::addCnt(Contact& cnt) {
+	if (_connected)
+		gg_add_notify_ex(_session, atoi(cnt.getUidString().a_str()), getCntType(cnt));
 }
 
-void GGSession::addCnt(string uin, char type) {
-	gg_add_notify_ex(_session, atoi(uin.c_str()), type);
+void Session::addCnt(string uid, char type) {
+	if (_connected)
+		gg_add_notify_ex(_session, atoi(uid.c_str()), type);
 }
 
-void GGSession::changeCnt(Contact &cnt) {
-	gg_remove_notify_ex(_session, atoi(cnt.getUidString().a_str()), getCntType(cnt));
-	gg_add_notify_ex(_session, atoi(cnt.getUidString().a_str()), getCntType(cnt));
+void Session::changeCnt(Contact& cnt) {
+	if (_connected) {
+		gg_remove_notify_ex(_session, atoi(cnt.getUidString().a_str()), getCntType(cnt));
+		gg_add_notify_ex(_session, atoi(cnt.getUidString().a_str()), getCntType(cnt));
+	}
 }
 
-void GGSession::removeCnt(Contact &cnt) {
-	gg_remove_notify_ex(_session, atoi(cnt.getUidString().a_str()), getCntType(cnt));
+void Session::removeCnt(Contact& cnt) {
+	if (_connected)
+		gg_remove_notify_ex(_session, atoi(cnt.getUidString().a_str()), getCntType(cnt));
 }
 
-void GGSession::removeCnt(string uin, char type) {
-	gg_add_notify_ex(_session, atoi(uin.c_str()), type);
+void Session::removeCnt(string uid, char type) {
+	if (_connected)
+		gg_add_notify_ex(_session, atoi(uid.c_str()), type);
 }
 
-int GGSession::convertKStatus(tStatus status, string description, bool friendsOnly) {
+int Session::convertKStatus(tStatus status, string description, bool friendsOnly) {
 	int result;
 	if (status == ST_ONLINE)
 		result = description.empty() ? GG_STATUS_AVAIL : GG_STATUS_AVAIL_DESCR;
@@ -255,7 +248,7 @@ int GGSession::convertKStatus(tStatus status, string description, bool friendsOn
 	return result;
 }
 
-tStatus GGSession::convertGGStatus(int status) {
+tStatus Session::convertGGStatus(int status) {
 	if (status & GG_STATUS_AVAIL | GG_STATUS_AVAIL_DESCR)
 		return ST_ONLINE;
 	else if (status & GG_STATUS_BUSY | GG_STATUS_BUSY_DESCR)

@@ -19,8 +19,7 @@ namespace GG {
 		va_end(p);
 	}
 
-	Controller::Controller() :
-		gg(threads) {
+	Controller::Controller() : gg(0) {
 		gg_debug_level = GG_DEBUG_FUNCTION;
 		gg_debug = &handler;
 		IMessageDispatcher& d = getIMessageDispatcher();
@@ -186,36 +185,46 @@ namespace GG {
 	
 	void Controller::onBeforeEnd(IMEvent &ev) {
 		IMLOG("[onBeforeEnd:]");
-		if (gg.isConnecting()) {
-			gg.stopConnecting(Ctrl->QuickShutdown(), 1000, true);
+		if (gg->isConnecting()) {
+			gg->stopConnecting(Ctrl->QuickShutdown(), 1000, true);
 		}
 	}
 
 	void Controller::onEnd(IMEvent &ev) {
 		IMLOG("[onEnd:]");
+		if (gg)
+			delete gg;
 	}
 
 	void Controller::onDisconnect(IMEvent& ev) {
 		IMLOG("[onDisconnect:]");
-		gg.setStatus(ST_OFFLINE, 0);
+		if (gg)
+			gg->setStatus(ST_OFFLINE, 0);
 	}
 
 	void Controller::onChangeStatus(IMEvent &ev) {
 		IMLOG("[onChangeStatus:]");
-		if (!gg.isConnected())
-			gg.connect(GETSTR(CFG::login), getPassword(), Controller::ggEventHandler, ev.getP1(), (char*)ev.getP2(), GETINT(CFG::friendsOnly));
-		else
-			gg.setStatus(ev.getP1(), (char*)ev.getP2());
+		if (!gg || !gg->isConnected()) {
+			string login = GETSTR(CFG::login);
+			string password = getPassword();
+			if (gg && (gg->getLogin() != login || gg->getPassword() != password))
+				delete gg;
+			if (!gg)
+				gg = new Session(login, password, &ggEventHandler, GETINT(CFG::friendsOnly));
+			threads.runEx(ggWatchThread, new tStatusInfo(ev.getP1(), (char*)ev.getP2()), "ggWatchThread");
+		} else {
+			gg->setStatus(ev.getP1(), (char*)ev.getP2());
+		}
 	}
 
 	void Controller::onGetStatus(IMEvent &ev) {
 		IMLOG("[onGetStatus:]");
-    ev.setReturnValue(gg.getStatus());
+			ev.setReturnValue(gg ? gg->getStatus() : ST_OFFLINE);
 	}
 
 	void Controller::onGetStatusInfo(IMEvent &ev) {
 		IMLOG("[onGetStatusInfo:]");
-		ev.setReturnValue(gg.getStatusDescription());
+			ev.setReturnValue(gg ? gg->getStatusDescription() : "");
 	}
 
 	void Controller::onGetUID(IMEvent &ev) {
@@ -225,48 +234,48 @@ namespace GG {
 	
 	void Controller::onIsConnected(IMEvent& ev) {
 		IMLOG("[onIsConnected:]");
-		ev.setReturnValue(gg.isConnected());
+		ev.setReturnValue(gg && gg->isConnected());
 	}
 
 	void Controller::onCntAdd(IMEvent& ev) {
 		IMLOG("[onCntAdd:]");
-		if (gg.isConnected()) {
+		if (gg && gg->isConnected()) {
 			Contact cnt(ev.getP1());
 			if (cnt.getNet() == net && !(cnt.getStatus() & (ST_HIDEMYSTATUS|ST_NOTINLIST))) {
-				gg.addCnt(cnt);
+				gg->addCnt(cnt);
 			}
 		}
 	}
 
 	void Controller::onCntChanged(IMEvent& ev) {
 		IMLOG("[onCntChanged:]");
-		if (gg.isConnected()) {
+		if (gg && gg->isConnected()) {
 			Contact cnt(ev.getP1());
 			sIMessage_CntChanged cntChanged(ev.getIMessage());
 
 			if (cntChanged._changed.net && cntChanged._oldNet == net) {
-				gg.removeCnt(cntChanged._oldUID, ICMessage(IMC_IGN_FIND, cntChanged._oldNet, (int)(cntChanged._changed.net ? cntChanged._oldUID : cnt.getUidString().a_str())) ? GG_USER_BLOCKED : GG_USER_NORMAL);
+				gg->removeCnt(cntChanged._oldUID, ICMessage(IMC_IGN_FIND, cntChanged._oldNet, (int)(cntChanged._changed.net ? cntChanged._oldUID : cnt.getUidString().a_str())) ? GG_USER_BLOCKED : GG_USER_NORMAL);
 				return;
 			} else if (cntChanged._changed.net && cntChanged._changed.net == net && !(cnt.getStatus() & (ST_HIDEMYSTATUS|ST_NOTINLIST))) {
 				setCntStatus(cnt, ST_OFFLINE);
-				gg.addCnt(cnt.getUidString().a_string(), gg.getCntType(cnt.getStatus()));
+				gg->addCnt(cnt.getUidString().a_string(), gg->getCntType(cnt.getStatus()));
 				return;
 			}
 
 			if (cntChanged._changed.uid && !(cnt.getStatus() & (ST_HIDEMYSTATUS|ST_NOTINLIST))) {
 				setCntStatus(cnt, ST_OFFLINE);
-				gg.removeCnt(cntChanged._oldUID);
-				gg.addCnt(cnt);
+				gg->removeCnt(cntChanged._oldUID);
+				gg->addCnt(cnt);
 			}
 		}
 	}
 
 	void Controller::onCntRemove(IMEvent& ev) {
 		IMLOG("[onCntRemove:]");
-		if (gg.isConnected()) {
+		if (gg && gg->isConnected()) {
 			Contact cnt(ev.getP1());
 			if (cnt.getNet() == net && !(cnt.getStatus() & (ST_HIDEMYSTATUS|ST_NOTINLIST))) {
-				gg.removeCnt(cnt);
+				gg->removeCnt(cnt);
 			}
 		}
 	}
@@ -339,7 +348,7 @@ namespace GG {
 			sde.info = "Podaj opis.";
 			if (!ICMessage(IMI_DLGENTER, (int)&sde))
 				return;
-			IMessage(IM_CHANGESTATUS, (tNet)net, imtProtocol, gg.isConnected() ? -1 : ST_ONLINE, (int)sde.value);
+			IMessage(IM_CHANGESTATUS, (tNet)net, imtProtocol, gg->isConnected() ? -1 : ST_ONLINE, (int)sde.value);
 			SETSTR(CFG::description, sde.value);
 		}
 	}
@@ -366,19 +375,19 @@ namespace GG {
 
 	void Controller::handleStatusOnline(ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION)) {
-			IMessage(IM_CHANGESTATUS, (tNet)net, imtProtocol, ST_ONLINE, gg.isConnected() ? 0 : (int)GETSTR(CFG::description));
+			IMessage(IM_CHANGESTATUS, (tNet)net, imtProtocol, ST_ONLINE, (gg ? gg->isConnected() : false) ? 0 : (int)GETSTR(CFG::description));
 		}	
 	}
 
 	void Controller::handleStatusAway(ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION)) {
-			IMessage(IM_CHANGESTATUS, (tNet)net, imtProtocol, ST_AWAY, gg.isConnected() ? 0 : (int)GETSTR(CFG::description));
+			IMessage(IM_CHANGESTATUS, (tNet)net, imtProtocol, ST_AWAY, (gg ? gg->isConnected() : false) ? 0 : (int)GETSTR(CFG::description));
 		}
 	}
 
 	void Controller::handleStatusInvisible(ActionEvent &ev) {
 		if (ev.withCode(ACTN_ACTION)) {
-			IMessage(IM_CHANGESTATUS, (tNet)net, imtProtocol, ST_HIDDEN, gg.isConnected() ? 0 : (int)GETSTR(CFG::description));
+			IMessage(IM_CHANGESTATUS, (tNet)net, imtProtocol, ST_HIDDEN, (gg ? gg->isConnected() : false) ? 0 : (int)GETSTR(CFG::description));
 		}	
 	}
 
@@ -478,13 +487,41 @@ namespace GG {
 		}
 
 		if ((ccServer & criterion) == ccServer) {
-			if (!gg.isConnected()) {
+			if (!gg->isConnected()) {
 				if (warnUser)
 					ICMessage(IMI_ERROR, (int)"Musisz byæ po³aczony z serwerem GG.", MB_TASKMODAL | MB_OK);
 				return false;
 			}
 		}
 		return true;
+	}
+
+	unsigned __stdcall Controller::ggWatchThread(LPVOID lParam) {
+		PlugStatusChange(ST_CONNECTING);
+
+		Controller* c = Singleton<Controller>::getInstance();
+		tStatus status = ((tStatusInfo*)lParam)->first;
+		string statusDescription = ((tStatusInfo*)lParam)->second;
+		delete lParam;
+
+		if (c->gg->connect(status, statusDescription)) {
+			unsigned cntCount = IMessage(IMC_CNT_COUNT);
+			Session::tContacts cnts;
+			for (int i = 1; i < cntCount; ++i) {
+				Contact cnt(i);
+				if (cnt.getNet() == net) {
+					cnts.push_back(cnt);
+				}
+			}
+			c->gg->sendCnts(cnts);
+
+			PlugStatusChange(status, statusDescription.c_str());
+			c->gg->startWatching();
+		}
+
+		PlugStatusChange(ST_OFFLINE);
+		c->resetCnts();
+		return 0;
 	}
 
 	void Controller::ggEventHandler(gg_event* event) {
@@ -503,7 +540,7 @@ namespace GG {
 				for (unsigned i = 0; event->event.notify60[i].uin; ++i) {
 					try {
 						Contact cnt(Contact::find((tNet)GG::net, inttostr(event->event.notify60[i].uin)));
-						c->setCntStatus(cnt, c->gg.convertGGStatus(event->event.notify60[i].status),
+						c->setCntStatus(cnt, c->gg->convertGGStatus(event->event.notify60[i].status),
 							event->event.notify60[i].descr ? event->event.notify60[i].descr : "",
 							event->event.notify60[i].remote_ip,
 							event->event.notify60[i].remote_port
@@ -518,7 +555,7 @@ namespace GG {
 				IMLOG("GG_EVENT_STATUS60");
 				try {
 					Contact cnt(Contact::find((tNet)net, inttostr(event->event.status60.uin)));
-					c->setCntStatus(cnt, c->gg.convertGGStatus(event->event.status60.status),
+					c->setCntStatus(cnt, c->gg->convertGGStatus(event->event.status60.status),
 						event->event.status60.descr ? event->event.status60.descr : "",
 						event->event.status60.remote_ip,
 						event->event.status60.remote_port
@@ -533,7 +570,7 @@ namespace GG {
 				IMLOG("GG_EVENT_STATUS");
 				try {
 					Contact cnt(Contact::find((tNet)net, inttostr(event->event.status.uin)));
-					c->setCntStatus(cnt, c->gg.convertGGStatus(event->event.status.status),
+					c->setCntStatus(cnt, c->gg->convertGGStatus(event->event.status.status),
 						event->event.status.descr ? event->event.status.descr : ""
 					);
 				} catch (ExceptionString& e) {

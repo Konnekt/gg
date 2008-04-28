@@ -141,7 +141,7 @@ namespace GG {
 		return 0;
 	}
 
-	unsigned __stdcall removeGGAccount (LPVOID lParam) {
+	unsigned __stdcall removeGGAccount(LPVOID lParam) {
 		if (ICMessage(IMI_CONFIRM, (int)"Twoje konto na gadu-gadu zostanie usuniête!\nKontynuowaæ?", MB_TASKMODAL | MB_YESNO) == IDNO) 
 			return 0;
 

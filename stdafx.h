@@ -58,7 +58,7 @@
 // #include <compat_w32.h> 
 #define ASSIGN_SOCKETS_TO_THREADS
 #define gg_thread_socket gg_win32_thread_socket
-#include <libgadu/include/libgadu.h>
+#include <libgadu/libgadu.h>
 
 // nag³ówki boosta
 #include <boost/signal.hpp>
@@ -66,12 +66,6 @@
 #include <boost/bind.hpp>
 
 // nag³ówki S.L
-/*
-#include <stamina/threadrun.h>
-#include <stamina/thread.h>
-#include <stamina/threadinvoke.h>
-*/
-
 #include <stamina/Helpers.h>
 #include <stamina/Object.h>
 #include <stamina/ObjectImpl.h>

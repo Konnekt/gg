@@ -80,46 +80,6 @@ namespace GG {
 	};
 	typedef map <int, int> tEventHandler;
 
-	// funkcje ---------------------------------------
-
-	// connection
-	VOID CALLBACK timerProc(HWND hwnd,UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
-	gg_session * loginWithTimeout(gg_login_params * p);
-	unsigned int __stdcall threadProc (void * lpParameter);
-	int connect();
-	int disconnect();
-
-	// conn_tools
-	void setStatus(int status, int setdesc = 1, gg_login_params * lp=0);
-	void setStatusDesc();
-	void chooseServer();
-	bool __stdcall disconnectDialogCB(sDIALOG_long*sd);
-	bool __stdcall cancelDialogCB(sDIALOG_long*sd);
-	bool __stdcall timeoutDialogCB(int type, sDIALOG_long*sd);
-	bool __stdcall timeoutDialogSimpleCB(int type, sDIALOG_long*sd);
-
-	// pubdir
-	void onPubdirSearchReply(gg_event *e);
-	unsigned int __stdcall doCntSearch(LPVOID lParam);
-	CStdString nfoGet(bool noTable, int cnt, int id);
-	unsigned int __stdcall doCntDownload(int pMsg);
-	unsigned int __stdcall doCntUpload(sIMessage_2params * msg);
-
-	// api_sessions
-	int event(GGER_enum type, void * data);
-	void waitOnSessions();
-
-	// tools
-	int check(bool conn = 1, bool sess = 1, bool login = 1, bool warn = 1);
-	void getAccount(int & login, CStdString & pass);
-	int event(GGER_enum type, void * data);
-	void waitOnSessions();
-	int userType(int id);
-	CStdString msgToHtml(CStdString msg, void * formats, int formats_length);
-	CStdString htmlToMsg(CStdString msgIn, void * formats, int & length);
-	bool getToken(const string & title, const string & info, string & tokenid, string & tokenval);
-	void quickEvent(int Uid, const char * body, const char * ext="", int flag=0);	// zmienne globalne
-
 	extern bool onRequest;
 	extern HANDLE ggThread;
 	extern int ggThreadId;

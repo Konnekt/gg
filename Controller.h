@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GG.h"
+#include "GGSession.h"
 
 namespace GG {
 	class Controller : public iController {
@@ -26,7 +27,6 @@ namespace GG {
 		};
 		
 		typedef vector<Server> tServers;
-		typedef pair<tStatus, string> tStatusInfo;
 
 	protected:
 		Controller();
@@ -41,14 +41,14 @@ namespace GG {
 		void onGetStatus(IMEvent& ev);
 		void onGetStatusInfo(IMEvent& ev);
 		void onGetUID(IMEvent& ev);
+		void onIsConnected(IMEvent& ev);
 		void onCntAdd(IMEvent& ev);
-		void onCntRemove(IMEvent& ev);
 		void onCntChanged(IMEvent& ev);
+		void onCntRemove(IMEvent& ev);
+		void onIgnChanged(IMEvent& ev);
 		void onCntDownload(IMEvent& ev);
 		void onCntUpload(IMEvent& ev);
 		void onCntSearch(IMEvent& ev);
-		void onIgnChanged(IMEvent& ev);
-		void onIsConnected(IMEvent& ev);
 		void onChangeStatus(IMEvent& ev);
 
 	public:
@@ -73,48 +73,24 @@ namespace GG {
 		//void apiEnabled(IMEvent& ev);
 
 	public:
-		//proste inline'y
-		inline bool isConnected() {
-			return connected;
-		}
-
-		inline tStatus getStatus() {
-			return status;
-		}
-		
-		inline string getStatusDescription() {
-			return statusDescription;
-		}
-
-	public:
 		//f-cje
 		void refreshServers(string serversString);
 		void setProxy();
 		string getPassword();
 		bool checkConnection(unsigned short criterion = ccInternet | ccServer, bool warnUser = true);
-		void connect(tStatus status, const char* description = "");
-		void setStatus(tStatus status, const char* description = "");
 		void sendMessage();
-		void disconnect(const char* description = "");
 
-		void setCntStatus(Contact& cnt, tStatus status, string description, long ip = 0, int port = 0);
+		void setCntStatus(Contact& cnt, tStatus status, string description = "", long ip = 0, int port = 0);
+		void resetCnts();
 
 	public:
-		static unsigned __stdcall connectProc(LPVOID param);
+		static void ggEventHandler(gg_event* event);
 
 	protected:
 		//zmienne wewnêtrzne
-		bool connected;
-		bool connecting;
-		tStatus status;
-		string statusDescription;
-		gg_session* session;
 		ThreadRunner threads;
-		HANDLE connectThread;
+		GGSession gg;
 		vector<Server> servers;
-		
-		//flagi dla w¹tków
-		bool stopConnecting;
 
 	public:
 		//zmienne zewnêtrzne

@@ -5,17 +5,17 @@
 #include "UserList.h"
 
 namespace GG {
-	bool __stdcall GG::disconnectDialogCB(sDIALOG_long*sd) {
-		IMLOG("Aktualny Socket w GG - %x @ %x", gg_thread_socket(sd->threadId, 0), sd->threadId);
+	bool __stdcall disconnectDialogCB(sDIALOG_long*sd) {
+		/*IMLOG("Aktualny Socket w GG - %x @ %x", gg_thread_socket(sd->threadId, 0), sd->threadId);
 		if (gg_thread_socket(sd->threadId, 0)) {
 			shutdown(gg_thread_socket(sd->threadId, 0), -1);
 			if (!gg_thread_socket(sd->threadId, -1))
 				IMLOG("closesocket.Error WSA = %d", WSAGetLastError());
-		}
+		}*/
 		return true;
 	}
 
-	bool __stdcall GG::timeoutDialogCB(int type, sDIALOG_long*sd) {
+	bool __stdcall timeoutDialogCB(int type, sDIALOG_long*sd) {
 		switch (type) {
 			case TIMEOUTT_START: break;
 			case TIMEOUTT_END: {

@@ -291,6 +291,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\GGSession.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Helpers.h"
 				>
 			</File>
@@ -400,6 +404,10 @@
 			</File>
 			<File
 				RelativePath="..\GG.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\GGSession.cpp"
 				>
 			</File>
 			<File

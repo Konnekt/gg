@@ -89,7 +89,6 @@ using namespace std;
 #include <konnekt/gg.h>
 #include <konnekt/ui_message_controls.h>
 #include <konnekt/lib.h>
-//WTX: #include <konnekt/tabletka.h>
 #include <konnekt/plugsNET.h>
 #include <konnekt/core_contact.h>
 #include <konnekt/contrib/iController.h>

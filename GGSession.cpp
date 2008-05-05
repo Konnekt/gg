@@ -3,8 +3,8 @@
 #include "GGSession.h"
 
 Session::Session(string login, string password, ggHandler handler, bool friendsOnly) :
-	_login (atoi(login.c_str())), _password(password), _handler(handler), _friendsOnly(friendsOnly), _session(0), 
-	_thread(0), _connected(false), _connecting(false), _watching(false), _status(ST_OFFLINE), _statusDescription("") { }
+	_uid(atoi(login.c_str())), _password(password), _handler(handler), _friendsOnly(friendsOnly), _session(0), 
+	_connected(false), _connecting(false), _listening(false), _status(ST_OFFLINE), _statusDescription("") { }
 
 void Session::setProxy(bool enabled, bool httpOnly, string host, int port, string login, string password) {
 	static char hostBuff[100];
@@ -36,7 +36,7 @@ bool Session::connect(tStatus status, string statusDescription) {
 
 		gg_login_params gglp;
 		memset(&gglp, 0, sizeof(gglp));
-		gglp.uin = _login;
+		gglp.uin = _uid;
 		gglp.password = (char*)_password.c_str();
 		gglp.status = convertKStatus(status, statusDescription);
 		gglp.status_descr = (char*)statusDescription.c_str();
@@ -51,14 +51,16 @@ bool Session::connect(tStatus status, string statusDescription) {
 
 		_status = ST_CONNECTING;
 
-		/*bool rotateServers = (string)GETSTR(CFG::selectedServer) == "";
+		tServers::iterator default = find(_servers.begin(), _servers.end(), true);
+		bool rotateServers = default == _servers.end();
+		IMLOG("Rotacja serwerów: %i", rotateServers);
 		if (!rotateServers) {
-			host = gethostbyname(GETSTR(CFG::selectedServer));
+			host = gethostbyname(default->ip.c_str());
 			if (host)
 				memcpy(&gglp.server_addr, host->h_addr, 4);
 			else
 				gglp.server_addr = 0;
-		}*/
+		}
 
 		_stopConnecting = false;
 
@@ -66,16 +68,17 @@ bool Session::connect(tStatus status, string statusDescription) {
 			_status = ST_CONNECTING;
 			_statusDescription = "";
 
-			/*if (rotateServers) {
-				host = gethostbyname(c->servers[i % c->servers.size()].ip.c_str());
+			if (rotateServers) {
+				host = gethostbyname(_servers[i % _servers.size()].ip.c_str());
 				if (host)
 					memcpy(&gglp.server_addr, host->h_addr, 4);
 				else
 					gglp.server_addr = 0;
-			}*/
+			}
+			IMLOG("£¹czê z \"%s\", rotacja: %i", _servers[i % _servers.size()].ip.c_str(), rotateServers);
 
 			_session = gg_login(&gglp);
-			
+
 			if (_session) {
 				gg_change_status_descr(_session, convertKStatus(status, statusDescription), statusDescription.c_str());
 
@@ -93,14 +96,15 @@ bool Session::connect(tStatus status, string statusDescription) {
 		_connected = false;
 		return 0;
 	}
+	return 0;
 }
 
-void Session::startWatching() {
+void Session::startListening() {
 	IMLOG("Kolejka zdarzeñ GG…");
 	if (_connected) {
-		_watching = true;
+		_listening = true;
 
-		for (bool first = true; _watching && _session->state == GG_STATE_CONNECTED; first = false) {
+		for (bool first = true; _listening && _session->state == GG_STATE_CONNECTED; first = false) {
 			gg_event* event = gg_watch_fd(_session);
 			if (!event) {
 				break;
@@ -108,10 +112,10 @@ void Session::startWatching() {
 
 			switch (event->type) {
 				case GG_EVENT_CONN_FAILED: {
-					_watching = false;
+					_listening = false;
 					break;
 				} case GG_EVENT_DISCONNECT: {
-					_watching = false;
+					_listening = false;
 					break;
 				} case GG_EVENT_NOTIFY:
 				case GG_EVENT_NOTIFY_DESCR: {
@@ -129,23 +133,17 @@ void Session::startWatching() {
 		}
 		IMLOG("Kolejka siê zakoñczy³a.");
 
-		gg_free_session(_session);
-		_session = 0;
 		_connected = false;
-		_watching = false;
+		_listening = false;
 		_status = ST_OFFLINE;
 		_statusDescription = "";
+		gg_free_session(_session);
+		_session = 0;
 	}
 }
 
-void Session::stopConnecting(bool quick, unsigned timeout, bool terminate) {
+void Session::stopConnecting() {
 	_stopConnecting = true;
-	if (!quick && WaitForSingleObject(_thread, 500) == WAIT_OBJECT_0) {
-		CloseHandle(_thread);
-		return;
-	}
-	TerminateThread(_thread, 0);
-	CloseHandle(_thread);
 }
 
 void Session::setStatus(tStatus status, const char* description) {
@@ -168,6 +166,10 @@ void Session::setStatus(tStatus status, const char* description) {
 	_statusDescription = setDescription;
 }
 
+void Session::ping() {
+	gg_ping(_session);
+}
+
 void Session::disconnect(const char* description) {
 	if (!isConnected())
 		return;
@@ -183,7 +185,7 @@ void Session::disconnect(const char* description) {
 	_statusDescription = setDescription.c_str();
 }
 
-void Session::sendCnts(tContacts& cnts) {
+void Session::sendContacts(tContacts& cnts) {
 	//hack: Hao mia³ ograniczenie do 400 kontaktów. Czemu?
 	uin_t* uins = new uin_t[cnts.size()];
 	char* types = new char[cnts.size()];
@@ -201,34 +203,27 @@ void Session::sendCnts(tContacts& cnts) {
 	delete[] types;
 }
 
-void Session::addCnt(Contact& cnt) {
+void Session::addContact(Contact& cnt) {
 	if (_connected)
-		gg_add_notify_ex(_session, atoi(cnt.getUidString().a_str()), getCntType(cnt));
+		gg_add_notify_ex(_session, atoi(cnt.getUidString().a_str()), getCntType(cnt.getStatus()));
 }
 
-void Session::addCnt(string uid, char type) {
-	if (_connected)
-		gg_add_notify_ex(_session, atoi(uid.c_str()), type);
-}
-
-void Session::changeCnt(Contact& cnt) {
-	if (_connected) {
-		gg_remove_notify_ex(_session, atoi(cnt.getUidString().a_str()), getCntType(cnt));
-		gg_add_notify_ex(_session, atoi(cnt.getUidString().a_str()), getCntType(cnt));
-	}
-}
-
-void Session::removeCnt(Contact& cnt) {
-	if (_connected)
-		gg_remove_notify_ex(_session, atoi(cnt.getUidString().a_str()), getCntType(cnt));
-}
-
-void Session::removeCnt(string uid, char type) {
+void Session::addContact(string uid, char type) {
 	if (_connected)
 		gg_add_notify_ex(_session, atoi(uid.c_str()), type);
 }
 
-int Session::convertKStatus(tStatus status, string description, bool friendsOnly) {
+void Session::removeContact(Contact& cnt) {
+	if (_connected)
+		gg_remove_notify_ex(_session, atoi(cnt.getUidString().a_str()), getCntType(cnt.getStatus()));
+}
+
+void Session::removeContact(string uid, char type) {
+	if (_connected)
+		gg_remove_notify_ex(_session, atoi(uid.c_str()), type);
+}
+
+int convertKStatus(tStatus status, string description, bool friendsOnly) {
 	int result;
 	if (status == ST_ONLINE)
 		result = description.empty() ? GG_STATUS_AVAIL : GG_STATUS_AVAIL_DESCR;
@@ -248,7 +243,7 @@ int Session::convertKStatus(tStatus status, string description, bool friendsOnly
 	return result;
 }
 
-tStatus Session::convertGGStatus(int status) {
+tStatus convertGGStatus(int status) {
 	if (status & GG_STATUS_AVAIL | GG_STATUS_AVAIL_DESCR)
 		return ST_ONLINE;
 	else if (status & GG_STATUS_BUSY | GG_STATUS_BUSY_DESCR)
@@ -261,4 +256,94 @@ tStatus Session::convertGGStatus(int status) {
 		return ST_BLOCKING;
 	else
 		return ST_OFFLINE;
+}
+
+Account::Account(GG::tUid uid, string password) {
+	_uid = uid;
+	_password = password;
+}
+
+string Account::getToken(string path) {
+	gg_http* gghttp = gg_token(false);
+	if (!gghttp || gghttp->state != GG_STATE_DONE)
+		throw ExceptionString("B³¹d przy pobieraniu.");
+	struct gg_token* token = (struct gg_token*)gghttp->data;
+	_tokenID = token->tokenid;
+
+	ofstream file(path.c_str(), ios_base::out | ios_base::trunc | ios_base::binary);
+	file.write(gghttp->body, gghttp->body_size);
+	if (file.fail()) {
+		file.close();
+		throw ExceptionString("B³¹d przy zapisie pliku.");
+	}
+	file.close();
+
+	gg_token_free(gghttp);
+	return path;
+}
+
+bool Account::createAccount(string newPassword, string email, string tokenVal) {
+	gg_http* gghttp = gg_register3(email.c_str(), newPassword.c_str(), _tokenID.c_str(), tokenVal.c_str(), 0);
+	if (!gghttp || gghttp->state != GG_STATE_DONE)
+		return false;
+
+	gg_register_watch_fd(gghttp);
+	gg_pubdir* pd = (gg_pubdir*)gghttp->data;
+	if (!pd->success) {
+		gg_register_free(gghttp);
+		return false;
+	}
+
+	_uid = pd->uin;
+	_password = newPassword;
+
+	gg_register_free(gghttp);
+	return true;
+}
+
+bool Account::removeAccount(string tokenVal) {
+	gg_http* gghttp = gg_unregister3(_uid, _password.c_str(), _tokenID.c_str(), tokenVal.c_str(), 0);
+	if (!gghttp || gghttp->state != GG_STATE_DONE)
+		return false;
+
+	gg_pubdir* pd = (gg_pubdir*)gghttp->data;
+	if (!pd->success) {
+		gg_unregister_free(gghttp);
+		return false;
+	}
+
+	gg_unregister_free(gghttp);
+	return true;
+}
+
+bool Account::changePassword(string newPassword, string email, string tokenVal) {
+	gg_http* gghttp = gg_change_passwd4(_uid, email.c_str(), _password.c_str(), newPassword.c_str(), _tokenID.c_str(), tokenVal.c_str(), 0);
+	if (!gghttp || gghttp->state != GG_STATE_DONE)
+		return false;
+
+	gg_pubdir* pd = (gg_pubdir*)gghttp->data;
+	if (!pd->success) {
+		gg_free_change_passwd(gghttp);
+		return false;
+	}
+
+	_password = newPassword;
+
+	gg_free_change_passwd(gghttp);
+	return true;
+}
+
+bool Account::remindPassword(string email, string tokenVal) {
+	gg_http* gghttp = gg_remind_passwd3(_uid, email.c_str(), _tokenID.c_str(), tokenVal.c_str(), 0);
+	if (!gghttp || gghttp->state != GG_STATE_DONE)
+		return 0;
+
+	gg_pubdir* pd = (gg_pubdir*)gghttp->data;
+	if (!pd->success) {
+		gg_remind_passwd_free(gghttp);
+		return false;
+	}
+
+	gg_remind_passwd_free(gghttp);
+	return true;
 }

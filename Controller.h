@@ -13,20 +13,7 @@ namespace GG {
 			ccServer = 4,
 			ccData = 8
 		};
-		
-		struct Server {
-			string ip;
-			bool selected;
-			bool ssl;
-			
-			Server (string ip = "", bool ssl = false, bool selected = false) {
-				this->ip = ip;
-				this->ssl = ssl;
-				this->selected = selected;
-			}
-		};
-		
-		typedef vector<Server> tServers;
+
 		typedef pair<tStatus, string> tStatusInfo;
 
 	protected:
@@ -71,6 +58,12 @@ namespace GG {
 		
 	protected:
 		static unsigned __stdcall ggWatchThread(LPVOID lParam);
+		static void _stdcall ggPingTimer(LPVOID lParam, DWORD dwTimerLowValue, DWORD dwTimerHighValue);
+
+		static unsigned __stdcall createAccount(LPVOID lParam);
+		static unsigned __stdcall removeAccount(LPVOID lParam);
+		static unsigned __stdcall changePassword(LPVOID lParam);
+		static unsigned __stdcall remindPassword(LPVOID lParam);
 
 	public:
 		//API
@@ -86,6 +79,8 @@ namespace GG {
 
 		void setCntStatus(Contact& cnt, tStatus status, string description = "", long ip = 0, int port = 0);
 		void resetCnts();
+		
+		string getToken(Account& account, string title, string info);
 
 	public:
 		static void ggEventHandler(gg_event* event);
@@ -93,8 +88,10 @@ namespace GG {
 	protected:
 		//zmienne wewnêtrzne
 		ThreadRunner threads;
+		HANDLE thread;
 		Session* gg;
-		vector<Server> servers;
+		tServers servers;
+		TimerBasic timer;
 
 	public:
 		//zmienne zewnêtrzne

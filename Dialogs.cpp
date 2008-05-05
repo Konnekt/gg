@@ -246,7 +246,7 @@ namespace GG {
 
 		Singleton<Controller>::getInstance()->setProxy();
 		int login = GETINT(CFG::login);
-		gg_http* gghttp = gghttp = gg_change_passwd4(login, email.c_str(), oldPassword.c_str(), password.c_str(), tokenID.c_str(), tokenVal.c_str(), 0);
+		gg_http* gghttp = gg_change_passwd4(login, email.c_str(), oldPassword.c_str(), password.c_str(), tokenID.c_str(), tokenVal.c_str(), 0);
 		if (!gghttp) {
 			ICMessage(IMI_LONGEND, (int)&sdl);
 			ICMessage(IMI_ERROR, (int)stringf("Wyst¹pi³ b³¹d. SprawdŸ po³¹czenie, oraz czy poda³eœ prawid³owy numer konta i has³o. Nastêpnie spróbuj ponownie.").c_str(),MB_TASKMODAL|MB_OK);

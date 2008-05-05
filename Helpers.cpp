@@ -5,8 +5,8 @@
 #include "UserList.h"
 
 namespace GG {	
-	Controller::tServers getServers(string serversString, string selected) {
-		Controller::tServers servers;
+	tServers getServers(string serversString, string selected) {
+		tServers servers;
 		size_t a = 0;
 		size_t b = 0;
 		string server;
@@ -25,7 +25,7 @@ namespace GG {
 			if (server.empty())
 				server = "HUB";
 			if (server != "HUB" || !hub)
-				servers.push_back(Controller::Server(server, ssl, server == selected));
+				servers.push_back(Server(server, ssl, server == selected));
 			if (server == "HUB" && !hub)
 				hub = true;
 			if (b == string::npos)

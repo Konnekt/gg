@@ -1,7 +1,6 @@
 #include "StdAfx.h"
 #include "Controller.h"
 #include "Helpers.h"
-#include "Dialogs.h"
 #include "UserList.h"
 
 namespace GG {	

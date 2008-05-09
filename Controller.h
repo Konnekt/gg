@@ -1,7 +1,9 @@
 #pragma once
 
 #include "GG.h"
-#include "GGSession.h"
+#include "GG/Session.h"
+#include "GG/Helpers.h"
+#include "GG/Account.h"
 
 namespace GG {
 	class Controller : public iController {
@@ -10,8 +12,10 @@ namespace GG {
 		//typy
 		enum checkCriterion {
 			ccInternet = 2,
-			ccServer = 4,
-			ccData = 8
+			ccSession = 4,
+			ccAccount = 8,
+			ccSessionIdle = 16,
+			ccAccountIdle = 32,
 		};
 
 		typedef pair<tStatus, string> tStatusInfo;
@@ -24,7 +28,6 @@ namespace GG {
 		void onPrepareUI(IMEvent& ev);
 		void onStart(IMEvent& ev);
 		void onEnd(IMEvent& ev);
-		void onBeforeEnd(IMEvent& ev);
 		void onDisconnect(IMEvent& ev);
 		void onGetStatus(IMEvent& ev);
 		void onGetStatusInfo(IMEvent& ev);
@@ -47,8 +50,11 @@ namespace GG {
 		void handleRemoveGGAccount(ActionEvent& ev);
 		void handleChangePassword(ActionEvent& ev);
 		void handleRemindPassword(ActionEvent& ev);
-		void handleImportCntList(ActionEvent& ev);
-		void handleExportCntList(ActionEvent& ev);
+		void handleImportContactsFromServer(ActionEvent& ev);
+		void handleImportContactsFromFile(ActionEvent& ev);
+		void handleExportContactsToServer(ActionEvent& ev);
+		void handleExportContactsToFile(ActionEvent& ev);
+		void handleRemoveContactsFromServer(ActionEvent& ev);
 		void handleStatusDescription(ActionEvent& ev);
 		void handleStatusServer(ActionEvent& ev);
 		void handleStatusOnline(ActionEvent& ev);
@@ -74,7 +80,7 @@ namespace GG {
 		void refreshServers(string serversString);
 		void setProxy();
 		string getPassword();
-		bool checkConnection(unsigned short criterion = ccInternet | ccServer, bool warnUser = true);
+		bool checkConnection(unsigned short criterion = ccInternet | ccSession, bool warnUser = true);
 		void sendMessage();
 
 		void setCntStatus(Contact& cnt, tStatus status, string description = "", long ip = 0, int port = 0);
@@ -85,13 +91,21 @@ namespace GG {
 	public:
 		static void ggEventHandler(gg_event* event);
 
+		static bool __stdcall operationAccountCancel(sDIALOG_long* dlg);
+		static bool __stdcall operationAccountTimeout(int type, sDIALOG_long* dlg);
+		static bool __stdcall operationPubDirCancel(sDIALOG_long* dlg);
+		static bool __stdcall operationPubDirTimeout(int type, sDIALOG_long* dlg);
+
 	protected:
 		//zmienne wewnêtrzne
 		ThreadRunner threads;
-		HANDLE thread;
+		HANDLE sessionThread;
+		HANDLE accountThread;
 		Session* gg;
+		Account* account;
 		tServers servers;
 		TimerBasic timer;
+		sDIALOG_long operationDlg;
 
 	public:
 		//zmienne zewnêtrzne

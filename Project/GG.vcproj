@@ -291,10 +291,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\GGSession.h"
-				>
-			</File>
-			<File
 				RelativePath="..\Helpers.h"
 				>
 			</File>
@@ -306,6 +302,26 @@
 				RelativePath="..\UserList.h"
 				>
 			</File>
+			<Filter
+				Name="GG"
+				>
+				<File
+					RelativePath="..\GG\Account.h"
+					>
+				</File>
+				<File
+					RelativePath="..\GG\Directory.h"
+					>
+				</File>
+				<File
+					RelativePath="..\GG\Helpers.h"
+					>
+				</File>
+				<File
+					RelativePath="..\GG\Session.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Source Files"
@@ -403,6 +419,7 @@
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
+					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -410,6 +427,7 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32"
+					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -417,6 +435,7 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="TeamBuild Debug|Win32"
+					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -425,10 +444,6 @@
 			</File>
 			<File
 				RelativePath="..\GG.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\GGSession.cpp"
 				>
 			</File>
 			<File
@@ -523,6 +538,53 @@
 				RelativePath="..\UserList.cpp"
 				>
 			</File>
+			<Filter
+				Name="GG"
+				>
+				<File
+					RelativePath="..\GG\Account.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\GG\Directory.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\GG\Helpers.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="TeamBuild Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\GG\Session.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Resource Files"

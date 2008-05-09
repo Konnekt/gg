@@ -1,8 +1,9 @@
 #include "stdafx.h"
 #include "Controller.h"
 #include "Helpers.h"
-#include "Dialogs.h"
 #include "UserList.h"
+
+//todo: Tam gdzie potrzebne - wstawiæ checkConnection.
 
 namespace GG {
 	//debug: To tylko tymczasowe.
@@ -19,7 +20,7 @@ namespace GG {
 		va_end(p);
 	}
 
-	Controller::Controller() : gg(0), thread(0) {
+	Controller::Controller() : gg(0), account(0), sessionThread(0), accountThread(0) {
 		gg_debug_level = GG_DEBUG_FUNCTION;
 		gg_debug = &handler;
 		IMessageDispatcher& d = getIMessageDispatcher();
@@ -40,7 +41,6 @@ namespace GG {
 		//IMessage
 		d.connect(IM_UI_PREPARE, bind(&Controller::onPrepareUI, this, _1));
 		d.connect(IM_START, bind(&Controller::onStart, this, _1));
-		d.connect(IM_BEFOREEND, bind(&Controller::onBeforeEnd, this, _1));
 		d.connect(IM_END, bind(&Controller::onEnd, this, _1));
 		d.connect(IM_DISCONNECT, bind(&Controller::onDisconnect, this, _1));
 		d.connect(IM_GET_STATUS, bind(&Controller::onGetStatus, this, _1));
@@ -67,8 +67,11 @@ namespace GG {
 		a.connect(ACT::removeGGAccount, bind(&Controller::handleRemoveGGAccount, this, _1));
 		a.connect(ACT::changePassword, bind(&Controller::handleChangePassword, this, _1));
 		a.connect(ACT::remindPassword, bind(&Controller::handleRemindPassword, this, _1));
-		a.connect(ACT::importCntList, bind(&Controller::handleImportCntList, this, _1));
-		a.connect(ACT::exportCntList, bind(&Controller::handleExportCntList, this, _1));
+		a.connect(ACT::importContactsFromServer, bind(&Controller::handleImportContactsFromServer, this, _1));
+		a.connect(ACT::importContactsFromFile, bind(&Controller::handleImportContactsFromFile, this, _1));
+		a.connect(ACT::exportContactsToServer, bind(&Controller::handleExportContactsToServer, this, _1));
+		a.connect(ACT::exportContactsToServer, bind(&Controller::handleExportContactsToFile, this, _1));
+		a.connect(ACT::removeContactsFromServer, bind(&Controller::handleRemoveContactsFromServer, this, _1));
 		a.connect(ACT::statusDescripton, bind(&Controller::handleStatusDescription, this, _1));
 		for (unsigned i = 0; i < serversCount; ++i) {
 			a.connect(ACT::statusServer + i, bind(&Controller::handleStatusServer, this, _1));
@@ -93,6 +96,14 @@ namespace GG {
 
 	void Controller::onStart(IMEvent &ev) {
 		IMLOG("[onStart:]");
+		
+		tUid uid = GETINT(CFG::login);
+		//todo: Pamiêtaæ, ¿e gdy has³o jest puste to musimy o nie pytaæ zawsze.
+		string password = GETSTR(CFG::password);
+		
+		if (uid) {
+			account = new Account(uid, password);
+		}
 	}
 
 	void Controller::onPrepareUI(IMEvent &ev) {
@@ -128,7 +139,7 @@ namespace GG {
 		UIActionAdd(CFG::group, 0, ACTT_SEPARATOR);
 
 		UIActionAdd(CFG::group, ACT::createGGAccount, ACTT_BUTTON | ACTSC_INLINE | ACTSC_BOLD, SetActParam("Za³ó¿ konto", AP_ICO, inttostr(ICON_ACCOUNTCREATE)).c_str(), 0, 155, 30);
-		UIActionAdd(CFG::group, ACT::importCntList, ACTT_BUTTON | ACTSC_BOLD | ACTSC_FULLWIDTH, SetActParam("Importuj listê kontaktów", AP_ICO, inttostr(ICON_IMPORT)).c_str(), 0, 180, 30);
+		UIActionAdd(CFG::group, ACT::importContactsFromServer, ACTT_BUTTON | ACTSC_BOLD | ACTSC_FULLWIDTH, SetActParam("Importuj listê kontaktów", AP_ICO, inttostr(ICON_IMPORT)).c_str(), 0, 180, 30);
 		UIActionAdd(CFG::group, ACT::changePassword, ACTT_BUTTON | ACTSC_INLINE, SetActParam("Zmieñ has³o", AP_ICO, inttostr(ICON_CHANGEPASSWORD)).c_str(), 0, 155, 30);
 		UIActionAdd(CFG::group, ACT::remindPassword, ACTT_BUTTON | ACTSC_FULLWIDTH, SetActParam("Przypomnij has³o", AP_ICO, inttostr(ICON_REMINDPASSWORD)).c_str(), 0, 180, 30);
 		UIActionAdd(CFG::group, 0, ACTT_GROUPEND, "");
@@ -166,12 +177,26 @@ namespace GG {
 		UIActionAdd(CFG::group, ACT::removeGGAccount, ACTT_BUTTON, SetActParam("Usuñ konto z serwera", AP_ICO, inttostr(ICON_ACCOUNTREMOVE)).c_str(), 0, 170, 30);
 		UIActionAdd(CFG::group, 0, ACTT_GROUPEND, "");
 
-		//zmiana statusu
+		//menu statusów
 		UIGroupAdd(IMIG_STATUS, ACT::status, 0, "GG", ICO::offline);
+		
+		//serwery
 		UIGroupAdd(ACT::status, ACT::statusServers, 0, "Serwer", ICO::server);
 		for (unsigned i = 0; i < serversCount; ++i) {
 			UIActionAdd(ACT::statusServers, ACT::statusServer + i, ACTS_HIDDEN, "");
 		}
+
+		//lista kontaktów
+		UIGroupAdd(ACT::status, ACT::importContacts, 0, "Importuj listê");
+		UIActionAdd(ACT::importContacts, ACT::importContactsFromServer, 0, "Z serwera", 0);
+		UIActionAdd(ACT::importContacts, ACT::importContactsFromFile, 0, "Z pliku", 0);
+		UIGroupAdd(ACT::status, ACT::exportContacts, 0, "Eksportuj listê");
+		UIActionAdd(ACT::exportContacts, ACT::exportContactsToServer, 0, "Do serwera", 0);
+		UIActionAdd(ACT::exportContacts, ACT::exportContactsToFile, 0, "Do pliku", 0);
+		UIActionAdd(ACT::exportContacts, ACT::removeContactsFromServer, 0, "Usuñ listê z serwera", 0);
+
+		//statusy
+		UIActionAdd(ACT::status, 0, ACTT_SEPARATOR);
 		UIActionAdd(ACT::status, ACT::statusDescripton, 0, "Opis", 0);
 		UIActionAdd(ACT::status, ACT::statusOnline, 0, "Dostêpny", ICO::online);
 		UIActionAdd(ACT::status, ACT::statusAway, 0, "Zaraz wracam", ICO::away);
@@ -179,27 +204,30 @@ namespace GG {
 		UIActionAdd(ACT::status, ACT::statusOffline, 0, "Niedostêpny", ICO::offline);
 
 		refreshServers(GETSTR(CFG::servers));
-
+		
 		ev.setSuccess();
-	}
-
-	void Controller::onBeforeEnd(IMEvent &ev) {
-		IMLOG("[onBeforeEnd:]");
 	}
 
 	void Controller::onEnd(IMEvent &ev) {
 		IMLOG("[onEnd:]");
-		if (gg)
+		if (gg) {
 			delete gg;
+			gg = 0;
+		}
+			
+		if (account) {
+			delete account;
+			account = 0;
+		}
 	}
 
 	void Controller::onDisconnect(IMEvent& ev) {
 		IMLOG("[onDisconnect:]");
 		if (gg)
 			gg->setStatus(ST_OFFLINE, 0);
-		if (WaitForSingleObject(thread, 1000) != WAIT_OBJECT_0)
-			TerminateThread(thread, 0);
-		CloseHandle(thread);
+		if (WaitForSingleObject(sessionThread, 1000) != WAIT_OBJECT_0)
+			TerminateThread(sessionThread, 0);
+		CloseHandle(sessionThread);
 	}
 
 	void Controller::onChangeStatus(IMEvent &ev) {
@@ -214,7 +242,7 @@ namespace GG {
 
 			gg->setServers(servers);
 
-			thread = threads.runEx(ggWatchThread, new tStatusInfo(ev.getP1(), (char*)ev.getP2()), "ggWatchThread");
+			sessionThread = threads.runEx(ggWatchThread, new tStatusInfo(ev.getP1(), (char*)ev.getP2()), "ggWatchThread");
 		} else {
 			gg->setStatus(ev.getP1(), (char*)ev.getP2());
 		}
@@ -306,6 +334,22 @@ namespace GG {
 			char* buff = new char[1000];
 			refreshServers(UIActionCfgGetValue(sUIAction(CFG::group, CFG::servers), buff, 1000));
 			delete[] buff;
+			
+			buff = new char[1000];
+			UIActionCfgGetValue(sUIAction(CFG::group, CFG::login), buff, 1000);
+			tUid uid = atoi(buff);
+			delete buff;
+
+			if (uid != 0 && uid != GETINT(CFG::login)) {
+				if (account) {
+					delete account;
+					account = 0;
+				}
+				account = new Account(uid, GETSTR(CFG::password));
+			} else if (account && uid == 0) {
+				delete account;
+				account = 0;
+			}
 		}
 	}
 
@@ -314,36 +358,106 @@ namespace GG {
 			UIActionCfgSetValue(sUIAction(CFG::group, CFG::servers), GG::defaultServers);
 	}
 
-	//todo: Te f-cje w¹tków s¹ do przepisania.
-	//todo: Timeouty.
 	void Controller::handleCreateGGAccount(ActionEvent &ev) {
-		if (ev.withCode(ACTN_ACTION))
-			threads.runEx(createAccount, 0, "CreateAccount");
+		if (ev.withCode(ACTN_ACTION)) {
+			if (checkConnection(ccAccountIdle|ccInternet)) {
+				account = new Account();
+				accountThread = threads.runEx(createAccount, (void*)this, "CreateAccount");
+			}
+		}
 	}
 
 	void Controller::handleRemoveGGAccount(ActionEvent &ev) {
-		if (ev.withCode(ACTN_ACTION))
-			threads.runEx(removeAccount, 0, "RemoveAccount");
+		if (ev.withCode(ACTN_ACTION)) {
+			if (checkConnection(ccAccount|ccAccountIdle|ccInternet)) {
+				accountThread = threads.runEx(removeAccount, (void*)this, "RemoveAccount");
+			}
+		}
 	}
-	
+
 	void Controller::handleChangePassword(ActionEvent &ev) {
-		if (ev.withCode(ACTN_ACTION))
-			threads.runEx(changePassword, 0, "ChangePassword");
+		if (ev.withCode(ACTN_ACTION)) {
+			if (checkConnection(ccAccount|ccAccountIdle|ccInternet)) {
+				accountThread = threads.runEx(changePassword, (void*)this, "ChangePassword");
+			}
+		}
 	}
 
 	void Controller::handleRemindPassword(ActionEvent &ev) {
-		if (ev.withCode(ACTN_ACTION))
-			threads.runEx(remindPassword, 0, "RemindPassword");
+		if (ev.withCode(ACTN_ACTION)) {
+			if (checkConnection(ccAccount|ccAccountIdle|ccInternet)) {
+				accountThread = threads.runEx(remindPassword, (void*)this, "RemindPassword");
+			}
+		}
 	}
 
-	void Controller::handleImportCntList(ActionEvent &ev) {
-		/*if (ev.withCode(ACTN_ACTION))
-			importList();*/
+	void Controller::handleImportContactsFromServer(ActionEvent &ev) {
+		if (ev.withCode(ACTN_ACTION)) {
+			if (checkConnection(ccSession|ccSessionIdle|ccInternet)) {
+				operationDlg.title = "GG - import listy kontaktów";
+				operationDlg.info = "Komunikujê siê z serwerem…";
+				operationDlg.flag = DLONG_AINET | DLONG_CANCEL;
+				operationDlg.cancelProc = operationPubDirCancel;
+				operationDlg.timeoutProc = operationPubDirTimeout;
+				operationDlg.timeout = GETINT(CFG_TIMEOUT) * 2;
+				ICMessage(IMI_LONGSTART, (int)&operationDlg);
+
+				Account account(GETINT(CFG::login), GETSTR(CFG::password));
+				try {
+					account.importContactsFromServer(*gg);
+				} catch (Exception& e) {
+					ICMessage(IMI_ERROR, (int)e.getReason().a_str(), MB_TASKMODAL | MB_OK);
+				}
+			}
+		}
+	}
+	
+	void Controller::handleImportContactsFromFile(ActionEvent &ev) {
+		if (ev.withCode(ACTN_ACTION)) {
+
+		}
 	}
 
-	void Controller::handleExportCntList(ActionEvent &ev) {
-		/*if (ev.withCode(ACTN_ACTION))
-			exportList();*/
+	void Controller::handleExportContactsToServer(ActionEvent &ev) {
+		if (ev.withCode(ACTN_ACTION)) {
+			if (checkConnection(ccSession|ccSessionIdle|ccInternet)) {
+				operationDlg.title = "GG - eksport listy kontaktów";
+				operationDlg.info = "Komunikujê siê z serwerem…";
+				operationDlg.flag = DLONG_AINET | DLONG_CANCEL;
+				operationDlg.cancelProc = operationPubDirCancel;
+				operationDlg.timeoutProc = operationPubDirTimeout;
+				operationDlg.timeout = GETINT(CFG_TIMEOUT) * 2;
+				ICMessage(IMI_LONGSTART, (int)&operationDlg);
+				
+				unsigned cntCount = IMessage(IMC_CNT_COUNT);
+				tContacts cnts;
+				for (unsigned i = 1; i < cntCount; ++i) {
+					Contact cnt(i);
+					if ((cnt.getNet() == net || cnt.getNet() == Net::none) && (!cnt.getDisplay().empty() || (cnt.getNet() != Net::none && !cnt.getUid().empty()))) {
+						cnts.push_back(cnt);
+					}
+				}
+
+				Account account(GETINT(CFG::login), GETSTR(CFG::password));
+				try {
+					account.exportContactsToServer(*gg, cnts);
+				} catch (Exception& e) {
+					ICMessage(IMI_ERROR, (int)e.getReason().a_str(), MB_TASKMODAL | MB_OK);
+				}
+			}
+		}
+	}
+	
+	void Controller::handleExportContactsToFile(ActionEvent &ev) {
+		if (ev.withCode(ACTN_ACTION)) {
+
+		}
+	}
+	
+	void Controller::handleRemoveContactsFromServer(ActionEvent &ev) {
+		if (ev.withCode(ACTN_ACTION)) {
+
+		}
 	}
 
 	void Controller::handleStatusDescription(ActionEvent& ev) {
@@ -476,7 +590,7 @@ namespace GG {
 	}
 
 	bool Controller::checkConnection(unsigned short criterion, bool warnUser) {
-		if ((ccInternet & criterion) == ccInternet) {
+		if ((ccInternet & criterion)) {
 			if (!ICMessage(IMC_CONNECTED)) {
 				if (warnUser)
 					ICMessage(IMI_ERROR, (int)"Operacja wymaga po³¹czenia z Internetem!\nSprawdŸ czy prawid³owo skonfigurowa³eœ po³¹czenie w konfiguracji.", MB_TASKMODAL | MB_OK);
@@ -484,18 +598,34 @@ namespace GG {
 			}
 		}
 
-		if ((ccData & criterion) == ccData) {
-			if (!strlen(GETSTR(CFG::login))) {
+		if ((ccSession & criterion)) {
+			if (!gg || !gg->isConnected()) {
 				if (warnUser)
-					ICMessage(IMI_ERROR, (int)"Musisz podaæ numer Gadu-Gadu w konfiguracji.", MB_TASKMODAL | MB_OK);
+					ICMessage(IMI_ERROR, (int)"Musisz byæ po³aczony z serwerem GG!", MB_TASKMODAL | MB_OK);
 				return false;
 			}
 		}
 
-		if ((ccServer & criterion) == ccServer) {
-			if (!gg->isConnected()) {
+		if ((ccAccount & criterion)) {
+			if (!account) {
 				if (warnUser)
-					ICMessage(IMI_ERROR, (int)"Musisz byæ po³aczony z serwerem GG.", MB_TASKMODAL | MB_OK);
+					ICMessage(IMI_ERROR, (int)"Musisz podaæ numer GG w ustawieniach!", MB_TASKMODAL | MB_OK);
+				return false;
+			}
+		}
+		
+		if ((ccSessionIdle & criterion)) {
+			if (gg && !gg->isIdle()) {
+				if (warnUser)
+					ICMessage(IMI_ERROR, (int)"Nie zakoñczono ostatniej operacji!", MB_TASKMODAL | MB_OK);
+				return false;
+			}
+		}
+
+		if ((ccAccountIdle & criterion)) {
+			if (account && !account->isIdle()) {
+				if (warnUser)
+					ICMessage(IMI_ERROR, (int)"Nie zakoñczono ostatniej operacji!", MB_TASKMODAL | MB_OK);
 				return false;
 			}
 		}
@@ -521,6 +651,28 @@ namespace GG {
 		ICMessage(IMI_DLGTOKEN, (int)&dt);
 
 		return dt.token;
+	}
+
+	void Controller::setCntStatus(Contact& cnt, tStatus status, string description, long ip, int port) {
+		ICMessage(IMI_CNT_ACTIVITY, cnt.getID());
+		CntSetStatus(cnt.getID(), status, description.c_str());
+		if (ip)
+			cnt.setHost(longToIp(ip));
+		if (port)
+			cnt.setPort(port);
+	}
+
+	void Controller::resetCnts() {
+		IMLOG("[Controller::resetCnts()]");
+		unsigned cntCount = IMessage(IMC_CNT_COUNT);
+		for (unsigned i = 1; i < cntCount; ++i) {
+			Contact cnt(i);
+			if (cnt.getNet() == net) {
+				setCntStatus(cnt, ST_OFFLINE, "");
+				ICMessage(IMI_CNT_DEACTIVATE, i);
+			}
+		}
+		ICMessage(IMI_REFRESH_LST);
 	}
 
 	unsigned __stdcall Controller::ggWatchThread(LPVOID lParam) {
@@ -576,10 +728,8 @@ namespace GG {
 		if (!ICMessage(IMI_DLGENTER, (int)&sde) || !*sde.value)
 			return 0;
 		string email = sde.value;
-		
-		Account account;
 
-		string tokenVal = c->getToken(account, "GG - nowe konto [krok 3/3]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.");
+		string tokenVal = c->getToken(*c->account, "GG - nowe konto [krok 3/3]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.");
 		if (tokenVal.empty())
 			return 0;
 
@@ -594,20 +744,22 @@ namespace GG {
 
 		c->setProxy();
 
-		if (!account.createAccount(password, email, tokenVal)) {
+		try {
+			c->account->createAccount(password, email, tokenVal);
+		} catch (Exception& e) {
 			ICMessage(IMI_LONGEND, (int)&sdl);
-			ICMessage(IMI_ERROR, (int)"Wyst¹pi³ b³¹d podczas zak³adania konta. SprawdŸ po³¹czenie i spróbuj ponownie.", 0);
+			ICMessage(IMI_ERROR, (int)e.getReason().a_str(), 0);
 			return 0;
 		}
 		ICMessage(IMI_LONGEND, (int)&sdl);
 
-		UIActionCfgSetValue(sUIAction(CFG::group, CFG::login), account.getLogin().c_str());
-		SETINT(CFG::login, account.getUid());
-		UIActionCfgSetValue(sUIAction(CFG::group, CFG::password), save ? account.getPassword().c_str() : "");
-		SETSTR(CFG::password, save ? account.getPassword().c_str() : "");
+		UIActionCfgSetValue(sUIAction(CFG::group, CFG::login), c->account->getLogin().c_str());
+		SETINT(CFG::login, c->account->getUid());
+		UIActionCfgSetValue(sUIAction(CFG::group, CFG::password), save ? c->account->getPassword().c_str() : "");
+		SETSTR(CFG::password, save ? c->account->getPassword().c_str() : "");
 		ICMessage(IMC_SAVE_CFG);
 
-		ICMessage(IMI_INFORM, (int)stringf("Konto zosta³o za³o¿one!\nTwój numer UID to %d", account.getUid()).c_str());
+		ICMessage(IMI_INFORM, (int)stringf("Konto zosta³o za³o¿one!\nTwój numer UID to %d", c->account->getUid()).c_str());
 		return 0;
 	}
 	
@@ -623,10 +775,13 @@ namespace GG {
 		if (!ICMessage(IMI_DLGPASS, (int)&sda))
 			return 0;
 		string password = sda.pass;
+		
+		if (password != c->account->getPassword()) {
+			ICMessage(IMI_ERROR, (int)"Nieprawid³owe has³o!", 0);
+			return 0;
+		}
 
-		Account account(GETINT(CFG::login), password);
-
-		string tokenVal = c->getToken(account, "GG - usuwanie konta [krok 2/2]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.");
+		string tokenVal = c->getToken(*c->account, "GG - usuwanie konta [krok 2/2]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.");
 		if (tokenVal.empty())
 			return 0;
 
@@ -641,9 +796,11 @@ namespace GG {
 		
 		c->setProxy();
 
-		if (!account.removeAccount(tokenVal)) {
+		try {
+			c->account->removeAccount(tokenVal);
+		} catch (Exception& e) {
 			ICMessage(IMI_LONGEND, (int)&sdl);
-			ICMessage(IMI_ERROR, (int)"Wyst¹pi³ b³¹d podczas usuwania konta. SprawdŸ po³¹czenie oraz czy poda³eœ prawid³owy numer i has³o i spróbuj ponownie.", 0);
+			ICMessage(IMI_ERROR, (int)e.getReason().a_str(), 0);
 			return 0;
 		}
 		ICMessage(IMI_LONGEND, (int)&sdl);
@@ -652,6 +809,9 @@ namespace GG {
 		SETSTR(CFG::login, "");
 		UIActionCfgSetValue(sUIAction(CFG::group, CFG::password), "");
 		SETSTR(CFG::password, "");
+		
+		delete c->account;
+		c->account = 0;
 
 		ICMessage(IMI_INFORM, (int)"Konto zosta³o usuniête.");
 		return 0;
@@ -673,6 +833,11 @@ namespace GG {
 			return 0;
 		oldPassword = sda.pass;
 
+		if (oldPassword != c->account->getPassword()) {
+			ICMessage(IMI_ERROR, (int)"Nieprawid³owe has³o!", 0);
+			return 0;
+		}
+
 		sda.pass = "";
 		sda.save = 1;
 		sda.flag = DFLAG_SAVE;
@@ -689,9 +854,7 @@ namespace GG {
 		if (!ICMessage(IMI_DLGENTER, (int)&sde)) return 0;
 		string email = sde.value;
 
-		Account account(GETINT(CFG::login), oldPassword);
-
-		string tokenVal = c->getToken(account, "GG - zmiana has³a [krok 4/4]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.");
+		string tokenVal = c->getToken(*c->account, "GG - zmiana has³a [krok 4/4]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.");
 		if (tokenVal.empty())
 			return 0;
 
@@ -705,17 +868,19 @@ namespace GG {
 		ICMessage(IMI_LONGSTART, (int)&sdl);
 
 		c->setProxy();
-		if (!account.changePassword(password, email, tokenVal)) {
+		try {
+			c->account->changePassword(password, email, tokenVal);
+		} catch (Exception& e) {
 			ICMessage(IMI_LONGEND, (int)&sdl);
-			ICMessage(IMI_ERROR, (int)"Wyst¹pi³ b³¹d podczas zmiany has³a dla konta %d . SprawdŸ po³¹czenie oraz czy poda³eœ prawid³owe has³o i spróbuj ponownie.", 0);
+			ICMessage(IMI_ERROR, (int)e.getReason().a_str(), 0);
 			return 0;
 		}
 		ICMessage(IMI_LONGEND, (int)&sdl);
 
-		UIActionCfgSetValue(sUIAction(CFG::group, CFG::password), save ? account.getPassword().c_str() : "");
-		SETSTR(CFG::password, save ? account.getPassword().c_str() : "");
+		UIActionCfgSetValue(sUIAction(CFG::group, CFG::password), save ? c->account->getPassword().c_str() : "");
+		SETSTR(CFG::password, save ? c->account->getPassword().c_str() : "");
 
-		ICMessage(IMI_INFORM, (int)stringf("Has³o dla konta %d zosta³o zmienione!", account.getUid()).c_str());
+		ICMessage(IMI_INFORM, (int)stringf("Has³o dla konta %d zosta³o zmienione!", c->account->getUid()).c_str());
 		return 0;
 	}
 	
@@ -729,9 +894,7 @@ namespace GG {
 			return 0;
 		string email = sde.value;
 
-		Account account(GETINT(CFG::login), GETSTR(CFG::password));
-
-		string tokenVal = c->getToken(account, "GG - przypomnienie has³a [2/2]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.");
+		string tokenVal = c->getToken(*c->account, "GG - przypomnienie has³a [2/2]", "Wpisz tekst znajduj¹cy siê na poni¿szym obrazku.");
 		if (tokenVal.empty())
 			return 0;
 
@@ -745,9 +908,11 @@ namespace GG {
 		ICMessage(IMI_LONGSTART, (int)&sdl);
 
 		c->setProxy();
-		if (!account.remindPassword(email, tokenVal)) {
+		try {
+			c->account->remindPassword(email, tokenVal);
+		} catch (Exception& e) {
 			ICMessage(IMI_LONGEND, (int)&sdl);
-			ICMessage(IMI_ERROR, (int)"Wyst¹pi³ b³¹d! SprawdŸ po³¹czenie, oraz czy poda³eœ prawid³owy adres email i spróbuj ponownie.", MB_TASKMODAL | MB_OK);
+			ICMessage(IMI_ERROR, (int)e.getReason().a_str(), 0);
 			return 0;
 		}
 		ICMessage(IMI_LONGEND, (int)&sdl);
@@ -815,31 +980,66 @@ namespace GG {
 				}
 				ICMessage(IMI_REFRESH_LST);
 				break;
+			} case GG_EVENT_USERLIST: {
+				if (event->event.userlist.type == GG_USERLIST_PUT_REPLY) {
+					IMLOG("GG_EVENT_USERLIST (wysy³anie)");
+					ICMessage(IMI_LONGEND, (int)&c->operationDlg);
+				} else if (event->event.userlist.type == GG_USERLIST_GET_REPLY) {
+					IMLOG("GG_EVENT_USERLIST (odbieranie)");
+					//todo: czytamy…
+					MessageBox(0, event->event.userlist.reply, 0, 0);
+					ICMessage(IMI_LONGEND, (int)&c->operationDlg);
+				}
+				break;
 			} default: {
 				IMLOG("GG_EVENT_… = %i", event->type);
 			}
 		}
 	}
 
-	void Controller::setCntStatus(Contact& cnt, tStatus status, string description, long ip, int port) {
-		ICMessage(IMI_CNT_ACTIVITY, cnt.getID());
-		CntSetStatus(cnt.getID(), status, description.c_str());
-		if (ip)
-			cnt.setHost(longToIp(ip));
-		if (port)
-			cnt.setPort(port);
+	bool __stdcall Controller::operationAccountCancel(sDIALOG_long* dlg) {
+		Controller* c = Singleton<Controller>::getInstance();
+		TerminateThread(c->accountThread, 0);
+		CloseHandle(c->accountThread);
+		if (c->account) {
+			c->account->cancelOperation();
+			if (!c->account->getUid())
+				delete c->account;
+				c->account = 0;
+		}
+		return true;
 	}
 
-	void Controller::resetCnts() {
-		IMLOG("[Controller::resetCnts()]");
-		unsigned cntCount = IMessage(IMC_CNT_COUNT);
-		for (unsigned i = 1; i < cntCount; ++i) {
-			Contact cnt(i);
-			if (cnt.getNet() == net) {
-				setCntStatus(cnt, ST_OFFLINE, "");
-				ICMessage(IMI_CNT_DEACTIVATE, i);
+	bool __stdcall Controller::operationAccountTimeout(int type, sDIALOG_long* dlg) {
+		switch (type) {
+			case TIMEOUTT_CHECK: {
+				return true;
+			} case TIMEOUTT_TIMEOUT: {
+				operationAccountCancel(dlg);
+				return true;
+			} default: {
+				return false;
 			}
 		}
-		ICMessage(IMI_REFRESH_LST);
+	}
+	
+	bool __stdcall Controller::operationPubDirCancel(sDIALOG_long* dlg) {
+		Controller* c = Singleton<Controller>::getInstance();
+		if (c->gg)
+			c->gg->cancelOperation();
+		return true;
+	}
+
+	bool __stdcall Controller::operationPubDirTimeout(int type, sDIALOG_long* dlg) {
+		switch (type) {
+			case TIMEOUTT_CHECK: {
+				return true;
+			} case TIMEOUTT_TIMEOUT: {
+				operationPubDirCancel(dlg);
+				return true;
+			} default: {
+				return false;
+			}
+		}
 	}
 }

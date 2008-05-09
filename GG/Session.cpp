@@ -1,10 +1,13 @@
 #include "stdafx.h"
-#include "GG.h"
-#include "GGSession.h"
+#include "../GG.h"
+#include "Helpers.h"
+#include "Session.h"
+#include "Account.h"
+#include "Directory.h"
 
 Session::Session(string login, string password, ggHandler handler, bool friendsOnly) :
 	_uid(atoi(login.c_str())), _password(password), _handler(handler), _friendsOnly(friendsOnly), _session(0), 
-	_connected(false), _connecting(false), _listening(false), _status(ST_OFFLINE), _statusDescription("") { }
+	_state(stDisconnected), _operation(opIdle), _status(ST_OFFLINE), _statusDescription("") { }
 
 void Session::setProxy(bool enabled, bool httpOnly, string host, int port, string login, string password) {
 	static char hostBuff[100];
@@ -32,7 +35,7 @@ void Session::setProxy(bool enabled, bool httpOnly, string host, int port, strin
 
 bool Session::connect(tStatus status, string statusDescription) {
 	if (!isConnected() && !isConnecting() && status != ST_OFFLINE) {
-		_connecting = true;
+		_state = stConnecting;
 
 		gg_login_params gglp;
 		memset(&gglp, 0, sizeof(gglp));
@@ -64,7 +67,7 @@ bool Session::connect(tStatus status, string statusDescription) {
 
 		_stopConnecting = false;
 
-		for (unsigned i = 0; !_session && _connecting && !_stopConnecting; ++i) {
+		for (unsigned i = 0; !_session && isConnecting() && !_stopConnecting; ++i) {
 			_status = ST_CONNECTING;
 			_statusDescription = "";
 
@@ -84,16 +87,14 @@ bool Session::connect(tStatus status, string statusDescription) {
 
 				_status = status;
 				_statusDescription = statusDescription;
-				_connecting = false;
-				_connected = true;
+				_state = stConnected;
 				return true;
 			}
 		}
 
 		_status = ST_OFFLINE;
 		_statusDescription = "";
-		_connecting = false;
-		_connected = false;
+		_state = stDisconnected;
 		return 0;
 	}
 	return 0;
@@ -101,10 +102,10 @@ bool Session::connect(tStatus status, string statusDescription) {
 
 void Session::startListening() {
 	IMLOG("Kolejka zdarzeñ GG…");
-	if (_connected) {
-		_listening = true;
+	if (isConnected()) {
+		_state = stListening;
 
-		for (bool first = true; _listening && _session->state == GG_STATE_CONNECTED; first = false) {
+		for (bool first = true; isListening() && _session->state == GG_STATE_CONNECTED; first = false) {
 			gg_event* event = gg_watch_fd(_session);
 			if (!event) {
 				break;
@@ -112,15 +113,25 @@ void Session::startListening() {
 
 			switch (event->type) {
 				case GG_EVENT_CONN_FAILED: {
-					_listening = false;
+					_state = stDisconnected;
 					break;
 				} case GG_EVENT_DISCONNECT: {
-					_listening = false;
+					_state = stDisconnected;
 					break;
 				} case GG_EVENT_NOTIFY:
 				case GG_EVENT_NOTIFY_DESCR: {
 					//debug: Ponoæ serwer ju¿ nie wysy³a tego, ale jeœli dokumentacja libgadu siê myli to wolê siê jakoœ dowiedzieæ.
 					MessageBox(0, "DOSTA£EŒ GG_EVENT_NOTIFY(_DESCR)!", 0, 0);
+					break;
+				} case GG_EVENT_USERLIST: {
+					if (event->event.userlist.type == GG_USERLIST_PUT_REPLY && _operation == opExportContacts) {
+						_operation = opIdle;
+					} else if (event->event.userlist.type == GG_USERLIST_GET_REPLY && _operation == opImportContacts) {
+						_operation = opIdle;
+					} else {
+						gg_event_free(event);
+						continue;
+					}
 					break;
 				} case GG_EVENT_NONE: {
 					continue;
@@ -133,8 +144,7 @@ void Session::startListening() {
 		}
 		IMLOG("Kolejka siê zakoñczy³a.");
 
-		_connected = false;
-		_listening = false;
+		_state = stDisconnected;
 		_status = ST_OFFLINE;
 		_statusDescription = "";
 		gg_free_session(_session);
@@ -147,9 +157,9 @@ void Session::stopConnecting() {
 }
 
 void Session::setStatus(tStatus status, const char* description) {
-	if (!_connected && !_connecting && status != ST_OFFLINE) {
+	if (!isConnected() && !isConnecting() && status != ST_OFFLINE) {
 		return;
-	} else if (_connecting && status == ST_OFFLINE) {
+	} else if (isConnecting() && status == ST_OFFLINE) {
 		_stopConnecting = true;
 		stopConnecting();
 		return;
@@ -180,7 +190,7 @@ void Session::disconnect(const char* description) {
 
 	gg_logoff(_session);
 	_session = 0;
-	_connected = false;
+	_state = stDisconnected;
 	_status = ST_OFFLINE;
 	_statusDescription = setDescription.c_str();
 }
@@ -204,146 +214,30 @@ void Session::sendContacts(tContacts& cnts) {
 }
 
 void Session::addContact(Contact& cnt) {
-	if (_connected)
+	if (isConnected())
 		gg_add_notify_ex(_session, atoi(cnt.getUidString().a_str()), getCntType(cnt.getStatus()));
 }
 
 void Session::addContact(string uid, char type) {
-	if (_connected)
+	if (isConnected())
 		gg_add_notify_ex(_session, atoi(uid.c_str()), type);
 }
 
 void Session::removeContact(Contact& cnt) {
-	if (_connected)
+	if (isConnected())
 		gg_remove_notify_ex(_session, atoi(cnt.getUidString().a_str()), getCntType(cnt.getStatus()));
 }
 
 void Session::removeContact(string uid, char type) {
-	if (_connected)
+	if (isConnected())
 		gg_remove_notify_ex(_session, atoi(uid.c_str()), type);
 }
 
-int convertKStatus(tStatus status, string description, bool friendsOnly) {
-	int result;
-	if (status == ST_ONLINE)
-		result = description.empty() ? GG_STATUS_AVAIL : GG_STATUS_AVAIL_DESCR;
-	else if (status == ST_AWAY)
-		result = description.empty() ? GG_STATUS_BUSY : GG_STATUS_BUSY_DESCR;
-	else if (status == ST_HIDDEN)
-		result = description.empty() ? GG_STATUS_INVISIBLE : GG_STATUS_INVISIBLE_DESCR;
-	else if (status == ST_OFFLINE)
-		result = description.empty() ? GG_STATUS_NOT_AVAIL : GG_STATUS_NOT_AVAIL_DESCR;
-	else if (status == ST_IGNORED)
-		result = GG_STATUS_BLOCKED;
-	else
-		result = description.empty() ? GG_STATUS_NOT_AVAIL : GG_STATUS_NOT_AVAIL_DESCR;
-
-	if (friendsOnly)
-		result |= GG_STATUS_FRIENDS_MASK;
-	return result;
+void Session::setFriendsOnly(bool friendsOnly) {
+	_friendsOnly = friendsOnly;
+	setStatus(-1, 0);
 }
 
-tStatus convertGGStatus(int status) {
-	if (status & GG_STATUS_AVAIL | GG_STATUS_AVAIL_DESCR)
-		return ST_ONLINE;
-	else if (status & GG_STATUS_BUSY | GG_STATUS_BUSY_DESCR)
-		return ST_AWAY;
-	else if (status & GG_STATUS_INVISIBLE | GG_STATUS_INVISIBLE_DESCR)
-		return ST_HIDDEN;
-	else if (status & GG_STATUS_NOT_AVAIL | GG_STATUS_NOT_AVAIL_DESCR)
-		return ST_OFFLINE;
-	else if (status & GG_STATUS_BLOCKED)
-		return ST_BLOCKING;
-	else
-		return ST_OFFLINE;
-}
-
-Account::Account(GG::tUid uid, string password) {
-	_uid = uid;
-	_password = password;
-}
-
-string Account::getToken(string path) {
-	gg_http* gghttp = gg_token(false);
-	if (!gghttp || gghttp->state != GG_STATE_DONE)
-		throw ExceptionString("B³¹d przy pobieraniu.");
-	struct gg_token* token = (struct gg_token*)gghttp->data;
-	_tokenID = token->tokenid;
-
-	ofstream file(path.c_str(), ios_base::out | ios_base::trunc | ios_base::binary);
-	file.write(gghttp->body, gghttp->body_size);
-	if (file.fail()) {
-		file.close();
-		throw ExceptionString("B³¹d przy zapisie pliku.");
-	}
-	file.close();
-
-	gg_token_free(gghttp);
-	return path;
-}
-
-bool Account::createAccount(string newPassword, string email, string tokenVal) {
-	gg_http* gghttp = gg_register3(email.c_str(), newPassword.c_str(), _tokenID.c_str(), tokenVal.c_str(), 0);
-	if (!gghttp || gghttp->state != GG_STATE_DONE)
-		return false;
-
-	gg_register_watch_fd(gghttp);
-	gg_pubdir* pd = (gg_pubdir*)gghttp->data;
-	if (!pd->success) {
-		gg_register_free(gghttp);
-		return false;
-	}
-
-	_uid = pd->uin;
-	_password = newPassword;
-
-	gg_register_free(gghttp);
-	return true;
-}
-
-bool Account::removeAccount(string tokenVal) {
-	gg_http* gghttp = gg_unregister3(_uid, _password.c_str(), _tokenID.c_str(), tokenVal.c_str(), 0);
-	if (!gghttp || gghttp->state != GG_STATE_DONE)
-		return false;
-
-	gg_pubdir* pd = (gg_pubdir*)gghttp->data;
-	if (!pd->success) {
-		gg_unregister_free(gghttp);
-		return false;
-	}
-
-	gg_unregister_free(gghttp);
-	return true;
-}
-
-bool Account::changePassword(string newPassword, string email, string tokenVal) {
-	gg_http* gghttp = gg_change_passwd4(_uid, email.c_str(), _password.c_str(), newPassword.c_str(), _tokenID.c_str(), tokenVal.c_str(), 0);
-	if (!gghttp || gghttp->state != GG_STATE_DONE)
-		return false;
-
-	gg_pubdir* pd = (gg_pubdir*)gghttp->data;
-	if (!pd->success) {
-		gg_free_change_passwd(gghttp);
-		return false;
-	}
-
-	_password = newPassword;
-
-	gg_free_change_passwd(gghttp);
-	return true;
-}
-
-bool Account::remindPassword(string email, string tokenVal) {
-	gg_http* gghttp = gg_remind_passwd3(_uid, email.c_str(), _tokenID.c_str(), tokenVal.c_str(), 0);
-	if (!gghttp || gghttp->state != GG_STATE_DONE)
-		return 0;
-
-	gg_pubdir* pd = (gg_pubdir*)gghttp->data;
-	if (!pd->success) {
-		gg_remind_passwd_free(gghttp);
-		return false;
-	}
-
-	gg_remind_passwd_free(gghttp);
-	return true;
+void Session::cancelOperation() {
+	_operation = opIdle;
 }

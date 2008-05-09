@@ -26,14 +26,26 @@ namespace GG {
 	typedef vector<Server> tServers;
 
 	class Session {
+		friend class Account;
+		friend class Directory;
+
 		public:
 			typedef void (*ggHandler)(gg_event*);
 			
-			enum SessionState {
-				idle,
-				connecting,
-				connected,
-				listening
+			enum enSessionState {
+				stDisconnected,
+				stConnecting,
+				stConnected,
+				stListening
+			};
+			
+			enum enSessionOperation {
+				opIdle,
+				opImportContacts,
+				opExportContacts,
+				opGetContact,
+				opSetContact,
+				opSearchContact
 			};
 
 		public:
@@ -41,13 +53,16 @@ namespace GG {
 
 		public:
 			inline bool isConnecting() {
-				return _connecting;
+				return _state == stConnecting;
 			}
 			inline bool isConnected() {
-				return _connected;
+				return _state == stConnected || _state == stListening;
 			}
 			inline bool isListening() {
-				return _listening;
+				return _state == stListening;
+			}
+			inline bool isIdle() {
+				return _operation == opIdle;
 			}
 			inline string getLogin() {
 				return inttostr(_uid);
@@ -85,6 +100,7 @@ namespace GG {
 			void removeContact(string uid, char type = GG_USER_NORMAL);
 
 			void setFriendsOnly(bool friendsOnly = true);
+			void cancelOperation();
 
 		protected:
 			ggHandler _handler;
@@ -94,52 +110,11 @@ namespace GG {
 			tServers _servers;
 
 			gg_session* _session;
-
-			bool _connecting;
-			bool _connected;
-			bool _listening;
-
+			enSessionState _state;
+			enSessionOperation _operation;
 			tStatus _status;
 			string _statusDescription;
 
 			bool _stopConnecting;
 	};
-
-	class Account {
-		public:
-			Account(tUid uid = 0, string password = "");
-			
-		public:
-			inline tUid getUid() {
-				return _uid;
-			}
-			inline string getLogin() {
-				return inttostr(_uid);
-			}
-			inline string getPassword() {
-				return _password;
-			}
-
-		public:
-			string getToken(string path);
-			bool createAccount(string newPassword, string email, string tokenVal);
-			bool removeAccount(string tokenVal);
-			bool changePassword(string newPassword, string email, string tokenVal);
-			bool remindPassword(string email, string tokenVal);
-
-		protected:
-			tUid _uid;
-			string _password;
-			string _tokenID;
-	};
-
-	class Directory {
-		//na razie nie ma
-	};
-}
-
-int convertKStatus(tStatus status, string description = "", bool friendsOnly = false);
-tStatus convertGGStatus(int status);
-inline int getCntType(tStatus status) {
-	return (status & ST_IGNORED) ? GG_USER_BLOCKED : (status & ST_HIDEMYSTATUS) ? GG_USER_OFFLINE : GG_USER_NORMAL;
 }

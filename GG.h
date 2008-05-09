@@ -46,18 +46,22 @@ namespace GG {
 		const unsigned removeGGAccount = net * 1000 + 202;
 		const unsigned changePassword = net * 1000 + 203;
 		const unsigned remindPassword = net * 1000 + 204;
-		const unsigned importCntList = net * 1000 + 205;
-		const unsigned exportCntList = net * 1000 + 206;
-		const unsigned deleteCnts = net * 1000 + 207;
-		const unsigned refreshCnts = net * 1000 + 208;
+		const unsigned importContacts = net * 1000 + 205;
+		const unsigned importContactsFromServer = net * 1000 + 206;
+		const unsigned importContactsFromFile = net * 1000 + 207;
+		const unsigned exportContacts = net * 1000 + 208;
+		const unsigned exportContactsToServer = net * 1000 + 209;
+		const unsigned exportContactsToFile = net * 1000 + 210;
+		const unsigned removeContactsFromServer = net * 1000 + 211;
+		const unsigned refreshContacts = net * 1000 + 212;
 
-		const unsigned status = net * 1000 + 209;
-		const unsigned statusServers = net * 1000 + 210;
-		const unsigned statusDescripton = net * 1000 + 211;
-		const unsigned statusOnline = net * 1000 + 212;
-		const unsigned statusAway = net * 1000 + 213;
-		const unsigned statusInvisible = net * 1000 + 214;
-		const unsigned statusOffline = net * 1000 + 215;
+		const unsigned status = net * 1000 + 213;
+		const unsigned statusServers = net * 1000 + 214;
+		const unsigned statusDescripton = net * 1000 + 215;
+		const unsigned statusOnline = net * 1000 + 216;
+		const unsigned statusAway = net * 1000 + 217;
+		const unsigned statusInvisible = net * 1000 + 218;
+		const unsigned statusOffline = net * 1000 + 219;
 		
 		//tu rezerwujemy serversCount identyfikatorów, pocz¹wszy od poni¿szego;
 		const unsigned statusServer = net * 1000 + 250;
